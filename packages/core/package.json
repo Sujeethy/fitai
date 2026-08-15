@@ -21,6 +21,8 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "@types/better-sqlite3": "^9.6.0",
+    "better-sqlite3": "^13.0.3",
     "drizzle-kit": "^0.31.10",
     "typescript": "~6.0.3"
   }

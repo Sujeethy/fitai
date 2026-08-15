@@ -80,7 +80,7 @@ Cache keys all live in `apps/mobile/src/data/queryKeys.ts`. Never inline a query
 string — mistyped keys cause invalidation bugs that are painful to trace.
 
 Do **not** introduce Drizzle's `useLiveQuery` as a second read path. See
-`docs/adr/0004-react-query-not-uselivequery.md`.
+`docs/adr/0006-react-query-over-the-repository.md`.
 
 ---
 

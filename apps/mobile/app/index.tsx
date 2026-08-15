@@ -1,20 +1,18 @@
 import { ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useFoundationStatus } from '@/data/useFoundationStatus';
+import { useBodyWeights, useExercises, useSessions } from '@/data/useRepository';
 
 /**
- * Phase 0 placeholder. Its only job is to show that the foundation is wired
- * correctly. Phase 1 replaces it with the real Today screen.
+ * Phase 1 in progress. The repository is wired; the logging screens land next.
+ *
+ * Note this screen no longer touches the database — everything comes through
+ * WorkoutRepository, so nothing here changes when Phase 9 adds a server.
  */
 export default function TodayScreen() {
   const insets = useSafeAreaInsets();
-  const { data, isPending, error } = useFoundationStatus();
-
-  const seedLabel = isPending
-    ? 'loading…'
-    : error
-      ? 'failed'
-      : `${data?.exerciseCount ?? 0} exercises`;
+  const exercises = useExercises();
+  const sessions = useSessions();
+  const weights = useBodyWeights();
 
   return (
     <ScrollView
@@ -26,20 +24,40 @@ export default function TodayScreen() {
       }}
     >
       <Text className="text-3xl font-bold text-white">fitai</Text>
-      <Text className="mt-1 text-neutral-400">Phase 0 — foundation</Text>
+      <Text className="mt-1 text-neutral-400">Phase 1 — repository wired</Text>
 
       <View className="mt-8 gap-3 rounded-2xl bg-neutral-900 p-5">
-        <StatusRow label="Database" value="open" ok={!error} />
-        <StatusRow label="Migrations" value="applied" ok={!error} />
-        <StatusRow label="Seed library" value={seedLabel} ok={!error && !isPending} />
-        <StatusRow label="React Query" value={error ? 'error' : 'connected'} ok={!error} />
+        <StatusRow
+          label="Exercise library"
+          value={describe(exercises, (d) => `${d.items.length} exercises`)}
+          ok={!exercises.error}
+        />
+        <StatusRow
+          label="Sessions logged"
+          value={describe(sessions, (d) => String(d.items.length))}
+          ok={!sessions.error}
+        />
+        <StatusRow
+          label="Body weight entries"
+          value={describe(weights, (d) => String(d.items.length))}
+          ok={!weights.error}
+        />
       </View>
 
       <Text className="mt-8 text-sm leading-5 text-neutral-500">
-        Next: Phase 1 — log a session, log body weight, and back up to Drive.
+        Next: start a session, log sets with one tap, and record body weight.
       </Text>
     </ScrollView>
   );
+}
+
+function describe<T>(
+  q: { data?: T; isPending: boolean; error: unknown },
+  format: (d: T) => string,
+): string {
+  if (q.isPending) return 'loading…';
+  if (q.error) return q.error instanceof Error ? q.error.message : 'failed';
+  return q.data ? format(q.data) : '—';
 }
 
 function StatusRow({ label, value, ok }: { label: string; value: string; ok: boolean }) {
