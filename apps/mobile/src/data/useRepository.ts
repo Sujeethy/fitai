@@ -1,5 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { LogBodyWeightInput, LogSetInput, Result } from '@fitai/contract';
+import type {
+  AddSessionExerciseInput,
+  LogBodyWeightInput,
+  LogSetInput,
+  ReplaceExerciseInput,
+  Result,
+  StartSessionInput,
+  UpdateSetInput,
+} from '@fitai/contract';
 import { describeError } from '@fitai/contract';
 import { beginUserAction, repository } from './repository';
 import { queryKeys } from './queryKeys';
@@ -110,5 +118,102 @@ export function useUndoBatch() {
     },
     // An undo can touch anything, so clear the lot rather than guess.
     onSuccess: () => void qc.invalidateQueries(),
+  });
+}
+
+export function useSubstitutes(exerciseId: string | undefined) {
+  return useQuery({
+    queryKey: queryKeys.exercises.substitutes(exerciseId ?? ''),
+    queryFn: () => unwrap(repository.suggestSubstitutes(exerciseId as string)),
+    enabled: Boolean(exerciseId),
+  });
+}
+
+export function useStartSession() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: StartSessionInput) => {
+      beginUserAction();
+      return unwrap(repository.startSession(input));
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: queryKeys.sessions.all });
+      void qc.invalidateQueries({ queryKey: queryKeys.journal.all });
+    },
+  });
+}
+
+export function useFinishSession() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => {
+      beginUserAction();
+      return unwrap(repository.finishSession(id));
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: queryKeys.sessions.all });
+      void qc.invalidateQueries({ queryKey: queryKeys.journal.all });
+    },
+  });
+}
+
+export function useAddSessionExercise(sessionId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: AddSessionExerciseInput) => {
+      beginUserAction();
+      return unwrap(repository.addSessionExercise(input));
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: queryKeys.sessions.detail(sessionId) });
+      void qc.invalidateQueries({ queryKey: queryKeys.journal.all });
+    },
+  });
+}
+
+/**
+ * Swapping an exercise. Defaults to `scope: 'today'` at the repository layer, so a
+ * busy machine never rewrites a saved routine by accident.
+ */
+export function useReplaceExercise(sessionId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: ReplaceExerciseInput) => {
+      beginUserAction();
+      return unwrap(repository.replaceExercise(input));
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: queryKeys.sessions.detail(sessionId) });
+      void qc.invalidateQueries({ queryKey: queryKeys.exercises.all });
+      void qc.invalidateQueries({ queryKey: queryKeys.journal.all });
+    },
+  });
+}
+
+export function useUpdateSet(sessionId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: UpdateSetInput) => {
+      beginUserAction();
+      return unwrap(repository.updateSet(input));
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: queryKeys.sessions.detail(sessionId) });
+      void qc.invalidateQueries({ queryKey: queryKeys.journal.all });
+    },
+  });
+}
+
+export function useDeleteSet(sessionId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => {
+      beginUserAction();
+      return unwrap(repository.deleteSet(id));
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: queryKeys.sessions.detail(sessionId) });
+      void qc.invalidateQueries({ queryKey: queryKeys.journal.all });
+    },
   });
 }
