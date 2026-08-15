@@ -14,7 +14,8 @@ const config: ExpoConfig = {
   orientation: 'portrait',
   scheme: 'fitai',
   userInterfaceStyle: 'dark',
-  newArchEnabled: true,
+  // No `newArchEnabled` flag: from SDK 57 the New Architecture is the only
+  // architecture, so the opt-in was removed from ExpoConfig. Behaviour is unchanged.
   runtimeVersion: { policy: 'appVersion' },
   android: {
     package: 'in.assureai.fitai',

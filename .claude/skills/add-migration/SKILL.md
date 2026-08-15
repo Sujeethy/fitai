@@ -24,8 +24,25 @@ Conventions:
 pnpm db:generate
 ```
 
-Commit the generated SQL. **Never hand-edit a migration that has already run** on a
-device — write a new one.
+Commit the generated SQL **and** the regenerated `src/migrations/migrations.js` and
+`meta/` — the app imports that bundle, so a migration missing from it never runs.
+**Never hand-edit a migration that has already run** on a device — write a new one.
+
+### How the migration reaches the device
+
+You do not wire anything up. `useDatabaseReady` in `apps/mobile/src/data/migrate.ts`
+calls Drizzle's `migrate()` on every app start, before any query, and Drizzle's own
+journal table makes already-applied migrations a no-op. A new migration file is picked
+up automatically on the next launch.
+
+Two build-time pieces make that import work, and both must stay:
+
+- `babel.config.js` — `inline-import` turns `.sql` files into strings
+- `metro.config.js` — `sourceExts` includes `sql`
+
+Remove either and migrations fail at runtime, not at build time. Note that
+`@fitai/core/migrations` is a **subpath** export deliberately kept out of the root
+index: the root is what vitest loads in plain Node, where `.sql` has no transform.
 
 ## 3. Update everything that follows from it
 

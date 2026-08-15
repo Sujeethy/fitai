@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
+import { migrate } from 'drizzle-orm/expo-sqlite/migrator';
 import { LOCAL_USER_ID, SEED_EXERCISES, nowIso, randomUUID } from '@fitai/core';
 import { schema } from '@fitai/core';
+import migrations from '@fitai/core/migrations';
 import { db, configureDatabase } from './db';
 
 /**
@@ -8,8 +10,9 @@ import { db, configureDatabase } from './db';
  * own — a new build (or an OTA update carrying new migration SQL) applies it on
  * next launch. See docs/DEPLOYMENT.md.
  *
- * Phase 0 keeps this deliberately simple. When migrations start mattering — Phase 1
- * onward — this switches to drizzle's `useMigrations` with the generated bundle.
+ * `migrate()` must run before any query: on a fresh install the database file exists
+ * but holds no tables, so the first `select` would fail with "no such table".
+ * Drizzle keeps its own journal table, so re-running it on every launch is a no-op.
  */
 export type MigrationState =
   | { status: 'pending' }
@@ -25,6 +28,7 @@ export function useDatabaseReady(): MigrationState {
     (async () => {
       try {
         configureDatabase();
+        await migrate(db, migrations);
         await ensureLocalUser();
         await ensureSeedExercises();
         if (!cancelled) setState({ status: 'ready' });

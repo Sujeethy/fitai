@@ -160,6 +160,9 @@ Ordered by how often they'd be "fixed" by mistake:
 | `contract/` describes an API that doesn't exist | The backend implements it in Phase 9. Designing it now means it's been exercised for months. |
 | Pagination arguments the local implementation ignores | Same reason. |
 | `packages/api` exists but is empty | Placeholder for Phase 9. Leave it. |
-| `nativewind` pinned to `4.1.23`, not `^4.1` | 4.2.x requires `react-native-worklets/plugin` unconditionally, and that ships only with Reanimated 4. Expo SDK 52 is on Reanimated 3, so 4.2.x cannot bundle. Unpin only when moving to Reanimated 4. |
-| `react-native-reanimated` pinned to `3.16.1` and listed though unused | NativeWind needs it as a peer, so it is in the tree regardless. 3.16.7 moved its Babel plugin behind `react-native-worklets`. |
+| `react-native-reanimated` listed though unused | NativeWind needs it as a peer, so it is in the tree regardless. It also brings `react-native-worklets`, which supplies NativeWind's Babel plugin. |
+| `babel.config.js` inline-imports `.sql` **and** `metro.config.js` adds a `sql` sourceExt | Two halves of one mechanism — Drizzle's generated migrations are `.sql` files that must become strings at build time. Remove either and `migrate()` fails: without the Babel plugin Metro parses the SQL as JavaScript. |
+| `@fitai/core/migrations` is a subpath export, not part of the root index | The root index is loaded by vitest in plain Node, where the `.sql` import has no Babel transform and throws. Only the app takes the migrations path. |
 | `.npmrc` sets `node-linker=hoisted` | Metro cannot follow pnpm's symlinked layout — `@expo/metro-runtime` and other peers fail to resolve. Standard for Expo in a pnpm monorepo. |
+| `metro.config.js` sets `disableHierarchicalLookup = true` | Stops Metro walking *above* the repo for modules. `expo-doctor` flags this and advises `false` — do not take that advice. There is an unrelated `node_modules` in the parent directory holding `react@18.2.0`; hierarchical lookup would let it shadow the real React 19. |
+| `app.config.ts` has no `newArchEnabled` flag | From SDK 57 the New Architecture is the only architecture, so the opt-in was removed from `ExpoConfig`. Adding it back is a type error. |
