@@ -18,8 +18,12 @@ const EAS_PROJECT_ID = '5811aefa-5591-403a-93ba-207dddb8e147';
  * downloads an update that calls a native module it does not have.
  */
 const config: ExpoConfig = {
+  // Shown on the phone's home screen.
   name: 'fitai',
-  slug: 'fitai',
+  // Must match the slug of the EAS project that `extra.eas.projectId` points at,
+  // or every eas command refuses to run. Expo assigned `sujeeth` when the project
+  // was created; renaming it there and here would work equally well.
+  slug: 'sujeeth',
   // Bumped for the SDK 52 -> 57 upgrade. `runtimeVersion` follows `version`, so this
   // is what stops an OTA update carrying SDK 57 JavaScript from reaching an older
   // SDK 52 APK and crashing it on launch. See docs/DEPLOYMENT.md §4.
