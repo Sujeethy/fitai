@@ -416,12 +416,22 @@ their terms. But going native opens a path the browser couldn't reach.
 **Health Connect** is Android's shared health store. **If Fitelo writes your body
 weight there, fitai can read it automatically** — no screenshots, no OCR, no scraping.
 
-> **Action item: check whether Fitelo has a Health Connect or Google Fit toggle.**
-> If it does, Phase 8 moves to Phase 1 — this stops being a nice-to-have.
+**Confirmed: Fitelo can connect to Health Connect.** Whether the values it writes are
+*accurate* is unverified, so Phase 5 opens with a spike — log a weight in Fitelo, see
+exactly what arrives in Health Connect and when.
+
+This is why `body_weights.source` exists from Phase 0. Every reading records where it
+came from (`manual` / `health_connect` / `llm` / `import`), which means:
+
+- A manual entry always wins over a Health Connect one for the same date
+- You can see at a glance which numbers came from where
+- If the spike shows Fitelo's values are unreliable, you turn the sync off and lose
+  nothing — manual and LLM entry still work exactly as before
 
 Fallbacks in order: BLE smart scale → screenshot read by an LLM and bulk-imported
 (duplicate dates skipped, so re-sending is safe) → CSV export if Fitelo has one →
-manual entry, always two taps.
+manual entry, always two taps. **The LLM can log body weight from Phase 6**, so Health
+Connect is a convenience, never a dependency.
 
 ---
 
@@ -570,10 +580,10 @@ Each phase ends with something usable.
 | **2 — Make it fast** | §7 in full, including the background rest timer | A full session takes under 90 seconds of screen time |
 | **3 — Session planning** | The four start modes, plan of record, save-as-routine, `suggest_session` | Starting a session never needs typing an exercise name |
 | **4 — Substitutions** | Swap flow, history-ranked substitutes, reasons, routine versioning | Two-tap swap, and "what do I do when the leg press is taken?" has a real answer |
-| **5 — Chat with tools** | Context builder, one provider, streaming, function calling, scope model, journal + undo UI | "I have 30 minutes, build me something" works in the gym — and you can undo it |
-| **6 — Multi-LLM** | Provider registry with 3+ adapters, parallel fan-out, columns, pin-best | Three columns streaming together; one failing doesn't break the others |
-| **7 — Charts & polish** | Body-weight trend, per-exercise progression, PR detection, quick-entry DSL, voice | You can see whether you're actually progressing |
-| **8 — Health Connect** | Dev build, permissions, body-weight sync, dedupe | Fitelo weights appear without typing. **Moves to Phase 1 if Fitelo writes to Health Connect.** |
+| **5 — Health Connect** | **Spike first:** confirm what Fitelo actually writes. Then dev build, permissions, body-weight sync, dedupe by `source` | Fitelo weights appear without typing — or the spike says they're unreliable and you keep manual + LLM entry |
+| **6 — Chat with tools** | Context builder, one provider, streaming, function calling, scope model, journal + undo UI | "I have 30 minutes, build me something" works in the gym — and you can undo it |
+| **7 — Multi-LLM** | Provider registry with 3+ adapters, parallel fan-out, columns, pin-best | Three columns streaming together; one failing doesn't break the others |
+| **8 — Charts & polish** | Body-weight trend, per-exercise progression, PR detection, quick-entry DSL, voice | You can see whether you're actually progressing |
 | **9 — Backend & multi-user** | Hono + Postgres + Better Auth under Docker Compose, sync engine draining the outbox, deployed when it must be reachable | Two devices agree, and no screen changed to make it happen |
 | **10 — Play Store** | 12-tester closed test, privacy policy, Data Safety, account deletion, health-data policy | It's live |
 | **11 — Desktop MCP** | `npx @fitai/mcp` over an exported DB, laptop viewer, Fitelo backfill via Claude Desktop | Bulk work from a laptop |

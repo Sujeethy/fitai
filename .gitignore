@@ -1,0 +1,35 @@
+node_modules/
+dist/
+build/
+coverage/
+.turbo/
+
+# Expo
+.expo/
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+android/
+ios/
+
+# Local data — never commit a database or a backup
+*.db
+*.db-journal
+*.db-wal
+*.sqlite
+backups/
+
+# Secrets. API keys live in expo-secure-store on the device, never in the repo.
+.env
+.env.*
+!.env.example
+
+# Editors / OS
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.log

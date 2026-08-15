@@ -1,0 +1,34 @@
+name: Build APK
+
+# Deliberately NOT on every push. EAS free-tier builds are quota-limited and slow,
+# and native changes are rare — roughly twice in the whole plan. Updates are the
+# cheap thing; builds are the expensive thing. See docs/DEPLOYMENT.md §5.
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+
+jobs:
+  build:
+    name: eas build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build
+        working-directory: apps/mobile
+        run: eas build --platform android --profile preview --non-interactive --no-wait
