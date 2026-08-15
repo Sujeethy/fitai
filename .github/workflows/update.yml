@@ -30,6 +30,13 @@ jobs:
       # Do not publish something that does not compile.
       - run: pnpm typecheck
 
+      # The commit message goes through the environment, never through `${{ }}`
+      # interpolation. Interpolating it directly builds the shell script with the
+      # message baked in, so backticks or $(...) in any commit message execute as
+      # commands on the runner. Quoting does not help — backticks are substituted
+      # inside double quotes. This also keeps multi-line messages in one argument.
       - name: Publish
         working-directory: apps/mobile
-        run: eas update --branch preview --message "${{ github.event.head_commit.message }}" --non-interactive
+        env:
+          COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+        run: eas update --branch preview --message "$COMMIT_MESSAGE" --non-interactive
