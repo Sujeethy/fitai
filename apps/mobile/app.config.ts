@@ -1,6 +1,16 @@
 import type { ExpoConfig } from 'expo/config';
 
 /**
+ * The EAS project this app publishes to (expo.dev).
+ *
+ * `eas init` normally writes this itself, but it cannot edit a dynamic config —
+ * app.config.ts is code, not JSON — so it is set by hand. It is a public
+ * identifier, not a secret: it appears in the update URL every installed app
+ * requests.
+ */
+const EAS_PROJECT_ID = '5811aefa-5591-403a-93ba-207dddb8e147';
+
+/**
  * Changing this file requires a NEW BUILD — it is native configuration, not
  * JavaScript, so an OTA update cannot carry it. See docs/DEPLOYMENT.md §3.
  *
@@ -36,6 +46,9 @@ const config: ExpoConfig = {
     enabled: true,
     checkAutomatically: 'ON_LOAD',
     fallbackToCacheTimeout: 0,
+    // Where the installed app fetches updates from. Without this the app has no
+    // endpoint to check and `eas update` publishes into the void.
+    url: `https://u.expo.dev/${EAS_PROJECT_ID}`,
   },
   android: {
     package: 'in.assureai.fitai',
@@ -45,6 +58,9 @@ const config: ExpoConfig = {
   },
   plugins: ['expo-router', 'expo-sqlite', 'expo-secure-store', 'expo-updates'],
   experiments: { typedRoutes: true },
+  extra: {
+    eas: { projectId: EAS_PROJECT_ID },
+  },
 };
 
 export default config;
