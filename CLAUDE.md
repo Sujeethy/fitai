@@ -1,0 +1,162 @@
+# CLAUDE.md
+
+Instructions for Claude Code and other LLM agents working in this repository.
+Humans should read this too — it's the shortest description of how the project works.
+
+---
+
+## What this is
+
+**fitai** — an offline-first gym logger for workouts and body weight. React Native
+(Expo), Android, single user today, multi-user later. Everything is stored in SQLite
+on the phone. There is no backend yet, by design.
+
+- **What we're building and why:** [PLAN.md](./PLAN.md)
+- **Diagrams and folder layout:** [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md)
+- **Domain terms:** [docs/GLOSSARY.md](./docs/GLOSSARY.md)
+- **Past decisions and what was rejected:** [docs/adr/](./docs/adr/)
+
+**Read the relevant ADR before changing anything architectural.** Several obvious-looking
+"improvements" were considered and deliberately declined; the ADRs say which and why.
+
+---
+
+## Invariants — do not break these
+
+These are load-bearing. Breaking one causes damage that shows up much later.
+
+**1. Only the repository touches the database.**
+No screen, component, or hook imports `db` or Drizzle directly. Everything goes
+through `WorkoutRepository`. This is what lets a backend be added in Phase 9 without
+rewriting the app.
+
+**2. Every repository operation is `async`, even though SQLite is instant.**
+The network won't be. Synchronous code now means changing every call site later.
+
+**3. Return `Result<T>`, never throw for expected failures.**
+`AppError` already declares `network`, `conflict`, and `unauthorized` variants that
+nothing produces yet. Leave them. They exist so Phase 9 adds `switch` cases instead
+of retrofitting error handling.
+
+**4. Every query is scoped by `user_id`, via `currentUserId()`.**
+There is one local user today. A query that forgets scoping is a data leak the day
+there are two.
+
+**5. Data is wire-shaped.**
+ISO date strings, plain JSON-serialisable objects. No `Date` instances, no classes, no
+functions in anything that crosses the repository boundary.
+
+**6. IDs are client-generated UUIDs.**
+Never database autoincrement. Offline creates cannot wait for a server.
+
+**7. Every mutation writes a `change_journal` entry with `before_json`.**
+This is both the undo history and the sync outbox. A mutation that skips it is
+invisible to undo *and* will never sync.
+
+**8. LLM changes default to `scope: 'today'`.**
+Anything touching a saved routine requires explicit user confirmation through a diff
+preview. This is a security boundary against prompt injection, not just a UX nicety.
+
+**9. LLM tools are narrow and typed.**
+No `delete_all`, no `execute_sql`, no general-purpose escape hatch. Every argument is
+zod-validated before execution. Model output is untrusted input.
+
+**10. API keys live in `expo-secure-store` only.**
+Never in the database, never in `settings`, never in a backup file, never committed.
+
+---
+
+## State management
+
+> **React Query owns anything that lives in the database.
+> Jotai owns anything that doesn't.**
+
+| State | Owner |
+|---|---|
+| Sessions, sets, body weights, routines, chat threads | React Query |
+| Rest timer, draft set values, open sheets, selected providers | Jotai |
+
+Cache keys all live in `apps/mobile/src/data/queryKeys.ts`. Never inline a query key
+string — mistyped keys cause invalidation bugs that are painful to trace.
+
+Do **not** introduce Drizzle's `useLiveQuery` as a second read path. See
+`docs/adr/0004-react-query-not-uselivequery.md`.
+
+---
+
+## Code conventions
+
+- **Feature-first folders.** New code goes in `src/features/<feature>/`, not in a
+  global `components/` bucket.
+- **Every feature folder has a `README.md`** in plain English: what it does, which
+  screens use it, which tables it touches. Update it when behaviour changes.
+- **Small components.** One job each. Past ~150 lines, split it. Past ~5 props,
+  compose it.
+- **Hooks hold logic, components hold layout.** A component that fetches, transforms,
+  and renders is three things wearing one hat.
+- **Named exports only.** No default exports — renames stay greppable.
+- **Absolute imports** via `@/`. Never `../../../`.
+- **One file per LLM tool, one per provider, one per database table.**
+- **No `any`.** If a type is genuinely unknown, use `unknown` and narrow it.
+
+---
+
+## Common tasks
+
+Recipes live in `.claude/skills/`. Prefer them over improvising:
+
+| Task | Skill |
+|---|---|
+| Add an LLM provider | `add-llm-provider` |
+| Add something the LLM can do | `add-tool` |
+| Change the database schema | `add-migration` |
+| Start a new feature folder | `add-feature` |
+
+If you do a task more than twice and there's no skill for it, write one.
+
+---
+
+## Commands
+
+```bash
+pnpm install
+pnpm dev              # Expo dev server
+pnpm typecheck        # must pass before any commit
+pnpm test
+pnpm lint
+pnpm db:generate      # generate a migration after a schema change
+pnpm db:migrate
+```
+
+`pnpm typecheck` and `pnpm test` must both pass. Do not commit around a failing
+typecheck.
+
+---
+
+## Working style in this repo
+
+- **Read the ADRs before proposing architectural changes.** If you think a decision
+  is wrong, say so and reference the ADR — don't silently do it differently.
+- **Don't add dependencies casually.** Every package ships inside the APK with full
+  app permissions. Prefer the standard library or an existing dependency.
+- **Don't build ahead of the current phase.** PLAN.md §16 has the order, and it's
+  deliberate. Phases 1–4 are the product; the rest is optional.
+- **When schema changes, update:** the schema file, a migration, the repository, the
+  contract, and the affected feature README. All five, or the next reader is misled.
+- **Prefer deleting to adding.** The smallest system that meets the requirement is the
+  right one — that's the reasoning behind having no backend yet.
+
+---
+
+## Things that look like bugs but are deliberate
+
+Ordered by how often they'd be "fixed" by mistake:
+
+| Looks wrong | Why it's right |
+|---|---|
+| `AppError` has variants nothing produces | Reserved for Phase 9. Removing them means retrofitting error handling later. |
+| Everything is `async` over an instant local database | So call sites don't change when the network arrives. |
+| `user_id` on every table with only one user | So multi-user is a feature, not a refactor. |
+| `contract/` describes an API that doesn't exist | The backend implements it in Phase 9. Designing it now means it's been exercised for months. |
+| Pagination arguments the local implementation ignores | Same reason. |
+| `packages/api` exists but is empty | Placeholder for Phase 9. Leave it. |

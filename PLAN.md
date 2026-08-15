@@ -1,13 +1,14 @@
 # fitai — Development Plan
 
-An offline-first gym logger for workouts and body weight. A React Native app on your
-Android phone, with no backend, no running costs, and an LLM assistant that has your
-actual training history as context.
+An offline-first gym logger for workouts and body weight. A React Native app that
+works with no signal, stores everything on your phone, and has an LLM assistant with
+your real training history as context — architected so a backend, login, and Play
+Store release can be added later without rewriting anything.
 
 Status: **planning**. Nothing is built yet. This document is the agreed direction.
 
-**Target: Android, React Native via Expo.** **No fixed training program** — sessions
-are built ad hoc or generated. Both facts shape decisions throughout.
+> **Diagrams and folder structure:** [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md)
+> **Rules for contributors and LLMs:** [CLAUDE.md](./CLAUDE.md)
 
 ---
 
@@ -15,253 +16,306 @@ are built ad hoc or generated. Both facts shape decisions throughout.
 
 | # | Requirement | Where |
 |---|---|---|
-| 1 | Log workouts on a phone, fast, mostly by hand | §6 |
-| 2 | Log body weight, ideally without retyping it from Fitelo | §10 |
-| 3 | Log substitutions with the date, so they're queryable | §8 |
-| 4 | Zero cost, everything stored on the phone | §2, §14 |
-| 5 | Ask an LLM for a replacement or a quick session, in the gym | §7, §9 |
-| 6 | LLM has profile + workout + weight context | §9 |
-| 7 | Free LLM to start, providers pluggable | §9 |
-| 8 | Several LLMs answering concurrently, side by side | §9 |
-| 9 | Rewind anything the LLM does that you don't like | §12 |
+| 1 | Log workouts on a phone, fast, mostly by hand | §7 |
+| 2 | Log body weight without retyping it from Fitelo | §11 |
+| 3 | Log substitutions with the date, so they're queryable | §9 |
+| 4 | Zero cost, everything on the phone | §2, §16 |
+| 5 | Ask an LLM for a replacement or a quick session, in the gym | §8, §10 |
+| 6 | LLM has profile + workout + weight context | §10 |
+| 7 | Free LLM to start, providers pluggable | §10 |
+| 8 | Several LLMs answering concurrently, side by side | §10 |
+| 9 | Rewind anything the LLM does that you don't like | §13 |
+| 10 | **Backend, login, and Play Store later — without a rewrite** | §5, §15 |
 
 ---
 
-## 2. The backend: there isn't one
+## 2. Architecture in one page
 
-**The phone is the whole system.** A SQLite database file lives in the app's private
-storage. The app reads and writes it directly. There is no server, no API, no
-account, no sync service, nothing deployed anywhere.
+**Today: the phone is the whole system.** A SQLite file in the app's private storage.
+No server, no account, nothing deployed, nothing to pay for.
 
-That's what makes it free — there's nothing to pay for because nothing is running.
-
-What would normally be "backend work" lives in `packages/core` and `packages/tools`,
-running in-process on the device: the schema, the domain logic, and the typed
-operations the LLM is allowed to perform.
-
-### What React Native gains us over the PWA plan
-
-Moving off the browser removes three constraints that shaped the earlier draft:
-
-| | Browser (PWA) | React Native |
-|---|---|---|
-| Database | SQLite compiled to WASM in OPFS, with header and eviction caveats | **Native SQLite file** in the app sandbox. Ordinary, fast, never evicted. |
-| LLM providers | **Restricted to providers that allow browser calls (CORS)** | **No CORS.** RN's `fetch` isn't a browser — any provider works, including ones that block web origins. |
-| API key storage | Browser storage, readable by any script on the origin | **`expo-secure-store`**, backed by the Android Keystore. |
-| Rest timer in background | Unreliable — no code runs when the app is closed | **`expo-notifications`** schedules through AlarmManager. Fires reliably. |
-| Health Connect | Impossible | **Available** — see §10, this may solve the Fitelo problem outright. |
-| Storage cleared by "clear browsing data" | Yes | No. App sandbox. |
-
-The CORS point is worth dwelling on: in the PWA plan, provider choice was filtered by
-"does it permit browser calls." That filter is gone. Every provider is now on the table.
-
-### MCP
-
-Unchanged from before, and worth restating: **MCP is not how the in-gym assistant works.**
-MCP is a protocol for a desktop client to spawn a local process over stdio. Your phone
-has no Node runtime.
-
-The in-gym assistant is **LLM function-calling inside the app** — the app sends the
-model your context plus typed tools, the model calls them, the app executes them
-against local SQLite.
-
-The tool layer is built once and exposed twice: in-app function calling (primary),
-and an optional `npx @fitai/mcp` wrapper you run on a laptop against an exported
-database file when you want Claude Desktop for bulk work (Phase 8).
+**Later: a backend is added underneath, not in front.** The app keeps writing to local
+SQLite — Play Store users go to basement gyms too. A sync engine drains an outbox to a
+server in the background. **No screen changes.**
 
 ```mermaid
 flowchart TB
-    subgraph Phone["Your Android phone — the entire system"]
-        UI["Expo / React Native app"]
-        TOOLS["packages/tools<br/>typed tool implementations"]
-        CORE["packages/core<br/>Drizzle schema + domain logic"]
-        DB[("expo-sqlite<br/>fitai.db")]
-        HC["Health Connect"]
-        BAK[["Backups → Drive folder"]]
-        UI --> TOOLS --> CORE --> DB
-        CORE --> BAK
-        HC --> CORE
+    subgraph Now["Phases 0-8 — your phone, complete on its own"]
+        UI["Screens"] --> HOOKS["Hooks — React Query + Jotai"]
+        HOOKS --> REPO["WorkoutRepository"]
+        REPO --> LOCAL["LocalRepository — Drizzle"]
+        LOCAL --> DB[("expo-sqlite")]
+        LOCAL --> J[("change_journal<br/>= undo + outbox")]
     end
-    UI -->|"fetch — no CORS limits"| PROV["Gemini / OpenRouter / Groq / any"]
-    subgraph Laptop["Optional, Phase 8"]
-        MCP["MCP wrapper"] --> TOOLS
-        CD["Claude Desktop"] -->|stdio| MCP
+    UI -.->|"direct fetch, no CORS"| LLM["Gemini / Groq / OpenRouter"]
+    subgraph Later["Phase 9+ — added underneath"]
+        SYNC["SyncEngine<br/>drains outbox"] --> API["Hono API"]
+        API --> PG[("Postgres")]
     end
+    J -.-> SYNC
 ```
+
+The whole design rests on one rule: **nothing above the repository knows where data
+lives.** §5 explains how that's enforced.
+
+Full diagrams — layers, request flows, sync, LLM tool calls — are in
+[docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md).
 
 ---
 
 ## 3. Why Expo and React Native
 
-You want to learn React Native, and for this app it's a defensible technical choice
-rather than only a learning one:
+You want to learn React Native, and it's also the right technical call here:
 
-1. **All three PWA limitations disappear** — background timer, Health Connect,
-   storage safety — from day one, with no later migration.
-2. **Health Connect may solve your original Fitelo problem properly** (§10).
-3. **No CORS constraint on LLM providers**, and keys go in the Keystore.
-4. **The learning is genuinely valuable.** React Native is widely used, and a
-   personal project is the right place to pick it up.
+1. **Background rest timer works.** `expo-notifications` schedules through Android's
+   AlarmManager — fires with the app closed. A web app cannot do this.
+2. **Health Connect is reachable** — which may solve the Fitelo problem outright (§11).
+3. **Storage is a real app sandbox.** No eviction, no "clear browsing data" wiping it.
+4. **No CORS limits on LLM providers.** A native `fetch` isn't a browser request, so
+   every provider is available — not just the ones that allow web origins.
+5. **API keys go in the Android Keystore** via `expo-secure-store`.
 
-**Expo specifically**, not bare React Native: managed native modules, Fast Refresh
-that's comparable to Vite HMR, EAS Build for APKs without wrestling Gradle, and
-first-party modules for every device capability this app needs.
+**Expo, not bare React Native**: managed native modules, Fast Refresh comparable to
+Vite HMR, and EAS Build for APKs without fighting Gradle.
 
-### Distribution
+**Distribution:** sideloaded APK during development (`eas build -p android --profile
+preview`), Play Store at Phase 10.
 
-Sideload. `eas build -p android --profile preview` produces an APK you install
-directly — no Play Store, no fees. Local builds via `npx expo run:android` are
-unlimited and free once Android Studio is set up.
-
-### One thing to know up front
-
-**Expo Go can't load arbitrary native modules.** The moment you add Health Connect
-(Phase 7), you need a *development build* — `eas build --profile development` — which
-is a one-time setup, not a workflow change. Phases 0–6 work fine in Expo Go.
+**One thing to know:** Expo Go can't load arbitrary native modules. The moment Health
+Connect arrives (Phase 8) you need a *development build* — a one-time setup. Phases
+0–7 run in Expo Go.
 
 ---
 
 ## 4. Stack
 
-TypeScript throughout — app, tools, schema, and the optional MCP wrapper share one
-type system, so a workout is defined exactly once.
+TypeScript everywhere — app, shared packages, and the eventual backend. That's what
+lets the phone and server share the schema, the validators, and the LLM tool
+definitions instead of duplicating them.
 
-| Layer | Pick | Why |
+### App
+
+| Concern | Pick | Why |
 |---|---|---|
-| Framework | **Expo (managed) + Expo Router** | File-based navigation, typed routes, painless native modules. |
-| Language | **TypeScript** | |
-| Styling | **NativeWind v4** | Tailwind syntax in React Native. The closest thing to the web workflow you know. |
-| Components | Custom, built on NativeWind, plus **`@gorhom/bottom-sheet`** | This app has few component types — steppers, list rows, sheets. A full UI kit (Tamagui, gluestack) is more weight than it's worth here. |
-| Database | **`expo-sqlite`** | Real native SQLite. No WASM, no OPFS, no eviction. |
-| DB access | **Drizzle ORM** (`drizzle-orm/expo-sqlite`) + drizzle-kit | Typed queries, real migrations, and `useLiveQuery` re-renders components when data changes. Schema stays portable if §15 ever happens. |
-| Validation | **zod** | Every tool call and import. Model output is untrusted input. |
-| Secrets | **`expo-secure-store`** | API keys in the Android Keystore, not plain storage. |
-| Notifications | **`expo-notifications`** | Rest timer that fires when the app is closed. |
-| Backups | **`expo-file-system`** (Storage Access Framework) + `expo-sharing` | Write to a Drive-synced folder you pick once. §12. |
-| Health data | **`react-native-health-connect`** | Phase 7. §10. |
-| Charts | **`victory-native` (XL)** | Skia-backed, smooth. Recharts is web-only. |
-| Animation/gesture | **Reanimated + Gesture Handler** | Swipe-to-swap, sheet interactions. |
-| Voice | **`expo-speech-recognition`** | Phase 8. |
-| Testing | Vitest/Jest + React Native Testing Library; **Maestro** for E2E | |
-| Builds | **EAS Build**, or local `expo run:android` | |
-| MCP (Phase 8) | `@modelcontextprotocol/sdk` + better-sqlite3 | Laptop only. |
+| Framework | **Expo + Expo Router** | File-based routing, typed routes, managed native modules |
+| Styling | **NativeWind v4** | Tailwind syntax in React Native — closest to the web workflow you know |
+| **Server/async state** | **TanStack Query (React Query)** | Caching, invalidation, optimistic updates, retries. Wraps the repository, so it works identically over local SQLite now and over HTTP later. |
+| **Client/UI state** | **Jotai** | Atoms for the active session draft, rest timer, selected providers, chat columns |
+| Persisted preferences | **`react-native-mmkv`** + `atomWithStorage` | Much faster than AsyncStorage |
+| Database | **`expo-sqlite`** | Real native SQLite |
+| ORM + migrations | **Drizzle** + drizzle-kit | One schema definition targets SQLite on device and Postgres on the server |
+| Validation | **zod** | Every tool call, every import, every API payload |
+| Secrets | **`expo-secure-store`** | API keys in the Android Keystore |
+| Notifications | **`expo-notifications`** | Background rest timer |
+| Backups | **`expo-file-system`** (SAF) + `expo-sharing` | Write to a Drive-synced folder |
+| Health data | **`react-native-health-connect`** | Phase 8 |
+| Charts | **`victory-native` (XL)** | Skia-backed |
+| Bottom sheets | **`@gorhom/bottom-sheet`** | The swap sheet, weight sheet |
+| Animation/gesture | **Reanimated + Gesture Handler** | Swipe-to-swap |
+| Lists | **`@shopify/flash-list`** | Long set/history lists stay smooth |
+| Testing | **Vitest** + React Native Testing Library, **Maestro** for E2E | |
 
-Deliberately **absent**: no server, no auth, no cloud database, no analytics SDK.
-Each would be a component to secure and pay for.
+### The state-ownership rule
 
-### Repo layout
+One line, and it settles every future "where does this go?" argument:
 
-```
-fitai/
-├── apps/
-│   ├── mobile/           # Expo app — the product
-│   ├── viewer/           # Phase 8: tiny read-only web viewer for a laptop
-│   └── mcp/              # Phase 8: optional desktop MCP wrapper
-├── packages/
-│   ├── core/             # Drizzle schema, migrations, domain logic
-│   ├── tools/            # Typed tool impls — shared by in-app chat AND mcp
-│   └── llm/              # Provider registry + context builder
-├── docs/adr/             # Architecture decision records
-└── PLAN.md
-```
+> **React Query owns anything that lives in the database.
+> Jotai owns anything that doesn't.**
 
-`packages/tools` is the important one: the single definition of what an LLM may do to
-your data, whichever way it connects.
+| Example | Owner |
+|---|---|
+| Past sessions, sets, body weights, routines | React Query |
+| Which exercise the swap sheet is open for | Jotai |
+| Rest timer countdown | Jotai |
+| Draft set values before you tap save | Jotai |
+| Selected LLM providers for side-by-side | Jotai |
+| Chat threads and messages (persisted) | React Query |
+
+We deliberately do **not** use Drizzle's `useLiveQuery` as the main read path. It's
+simpler for pure-local reactive reads, but it has no story for a server, and mixing
+two data-fetching mechanisms is exactly the kind of thing that makes a codebase hard
+to follow. One way to read data. Recorded as an ADR.
+
+### Backend (Phase 9, not before)
+
+| Concern | Pick |
+|---|---|
+| Framework | **Hono** — runs unchanged on Node, Cloudflare Workers, Deno, Bun, so no hosting lock-in |
+| Database | **Postgres** (Neon or Supabase) |
+| ORM | **Drizzle** — same schema files as the app |
+| Auth | **Better Auth** — self-hosted, Drizzle-native, supports the account-deletion flow Play Store requires |
+| Local dev | **Docker Compose**, or point at a free Neon DB and skip Docker |
+| Phone → laptop during dev | **Tailscale** — free, nothing publicly exposed |
 
 ---
 
-## 5. Data model
+## 5. Built now so the backend is easy later
 
-Every table carries `id` (uuid), `created_at`, `updated_at`, `deleted_at` (soft
-delete). Retrofitting that trio later is painful; adding it now is free.
+This is the part that makes Phase 9 small. All of it lands in Phase 0.
+
+### Rule 1 — nothing touches the database except the repository
+
+```ts
+// packages/core/src/repository.ts
+export interface WorkoutRepository {
+  getSessions(q: SessionQuery): Promise<Result<Paginated<Session>>>;
+  getLastPerformance(exerciseId: string): Promise<Result<Performance | null>>;
+  logSet(input: LogSetInput): Promise<Result<Set>>;
+  replaceExercise(input: ReplaceExerciseInput): Promise<Result<SessionExercise>>;
+}
+```
+
+A component that calls `db.select().from(sets)` has to be rewritten in Phase 9. One
+that calls `repo.logSet(...)` never does. This single discipline is most of the benefit.
+
+### Rule 2 — six decisions that cost nothing now
+
+| Decision | Why now |
+|---|---|
+| **Every operation is `async`** | SQLite is instant, the network isn't. Sync code now means every call site changes later. |
+| **Wire-shaped data** — ISO date strings, plain objects, no class instances | The same type is valid locally and remotely; no conversion layer to add |
+| **`Result<T>` instead of throwing** | Declare `network`, `conflict`, `unauthorized` variants now, unused. Phase 9 adds `switch` cases instead of retrofitting error handling into every screen. |
+| **Pagination in every list signature** | `getSessions({ limit, cursor })` — local ignores `cursor`. Otherwise every list call changes. |
+| **Client-generated UUIDs** | Offline creates can't wait for a server to assign an ID. |
+| **Mutations shaped like endpoints** | `logSet(input)` maps to `POST /sets`. Designing payloads now designs the API for free. |
+
+```ts
+type Result<T> = { ok: true; data: T } | { ok: false; error: AppError };
+
+type AppError =
+  | { kind: 'not_found' }
+  | { kind: 'validation'; issues: ZodIssue[] }
+  | { kind: 'conflict'; serverUpdatedAt: string }  // unused until Phase 9
+  | { kind: 'network' }                            // unused until Phase 9
+  | { kind: 'unauthorized' };                      // unused until Phase 9
+```
+
+### Rule 3 — the API is consumed by a sync engine, not by screens
+
+The obvious plan is "swap `LocalRepository` for `HttpRepository`". **Don't** — that
+breaks offline logging, which is the whole point.
+
+Local SQLite stays the primary store forever. Phase 9 adds a background sync engine.
+Screens keep calling the same repository and genuinely do not change. Only auth and
+the LLM proxy are called directly from the UI, and those are new screens anyway.
+
+### Rule 4 — the change journal is already the outbox
+
+The `change_journal` (§13) records every mutation with entity, operation, and
+before/after state. Add one column:
+
+```ts
+change_journal { …, synced_at: string | null }
+```
+
+Rows with `synced_at = null` are pending sync. **One table serves both undo and sync**,
+so Phase 9 introduces no new queuing mechanism — it reads a table that's been filling
+correctly since Phase 1.
+
+### Rule 5 — contract-first
+
+`packages/contract` holds the operation names, zod payload schemas, and response
+types. The local repository implements the contract now; Hono routes implement the
+same contract in Phase 9, and Hono's RPC client gives end-to-end type safety with no
+codegen. By then the endpoints, payloads, and error taxonomy have been exercised for
+months.
+
+### Rule 6 — multi-tenant schema from day one
+
+You want Play Store eventually, so the expensive retrofit — **scoping every query by
+user** — is avoided by never writing an unscoped one.
+
+```ts
+users        (id, email, display_name, is_local, …)
+sessions     (id, user_id, …)
+sets         (id, user_id, …)
+body_weights (id, user_id, …)
+```
+
+Locally you seed one row with `is_local: true`, and every query goes through
+`currentUserId()`. It looks like over-engineering for one person, and it's the
+difference between "add login" being a feature and being a refactor.
+
+**No auth, no server, no cloud DB yet** — just the shape. Still ₹0, still offline.
+
+---
+
+## 6. Data model
+
+Every table carries `id` (uuid), `user_id`, `created_at`, `updated_at`, `deleted_at`
+(soft delete). Retrofitting that set is painful; adding it now is free, and it's
+exactly what sync engines require.
 
 | Table | Purpose |
 |---|---|
-| `profile` | Height, birth year, goals, units, preferences. Fed to the LLM as context. |
-| `exercises` | Exercise library — name, muscles, equipment, aliases. Seeded. |
-| `exercise_substitutes` | Directed pairs with a quality score: "hack squat stands in for leg press". Seeded, then reinforced by your history. |
-| `routines` / `routine_versions` / `routine_exercises` | Optional saved templates. **Versioned** — §8. |
+| `users` | Local user now; real accounts at Phase 9 |
+| `profile` | Height, birth year, goals, units, preferences. LLM context. |
+| `exercises` | Library — name, muscles, equipment, aliases. Seeded. |
+| `exercise_substitutes` | Directed pairs with a quality score. Seeded, then reinforced by your history. |
+| `routines` / `routine_versions` / `routine_exercises` | Optional saved templates, **versioned** (§9) |
 | `sessions` | One gym visit. Date, `origin`, duration, bodyweight, notes. |
-| `session_exercises` | An exercise performed. Holds `planned_exercise_id` + `substitution_reason` — §8 lives here. |
-| `sets` | weight, reps, RPE, set type (warmup/working/drop/failure), completed. |
-| `body_weights` | date, weight, `source` (`manual`/`health_connect`/`llm`/`import`), notes. |
-| `chat_threads` / `chat_messages` | Chat history, with `provider_id` per message so side-by-side answers persist. |
-| `change_journal` | Every mutation, with before/after and actor. §12. |
-| `settings` | Preferences. **API keys live in SecureStore, not here** — §11. |
+| `session_exercises` | Holds `planned_exercise_id` + `substitution_reason` — §9 lives here |
+| `sets` | weight, reps, RPE, set type, completed |
+| `body_weights` | date, weight, `source` (`manual`/`health_connect`/`llm`/`import`) |
+| `chat_threads` / `chat_messages` | `provider_id` per message, so side-by-side answers persist |
+| `change_journal` | Every mutation + `synced_at`. Undo **and** outbox. |
+| `settings` | Preferences. API keys live in SecureStore, never here. |
 
-Index `sets` on `(session_exercise_id)` and `(exercise_id, created_at)` — every
-"what did I lift last time" query hits those.
+Index `sets` on `(user_id, session_exercise_id)` and `(user_id, exercise_id, created_at)`.
 
-Realistic size: ~125 sets/week is roughly 2–5 MB/year including the journal. Storage
-is a non-issue.
+Realistic size: ~125 sets/week ≈ 2–5 MB/year including the journal.
 
 ---
 
-## 6. Making manual logging fast
+## 7. Making manual logging fast
 
 You'll mostly log by hand, so the app is judged here. Target: **a set logged in one
 tap, a full session in under 90 seconds of screen time.**
-
-The highest-leverage idea:
 
 > **Never show an empty form.** Opening an exercise pre-fills exactly what you did
 > last time — same weight, same reps, same set count. The common case becomes
 > confirmation rather than data entry.
 
-Building on that:
+1. **"Same as last time"** — one tap logs the whole exercise
+2. **Repeat-set button**, thumb-reachable at the bottom. Tap, tap, tap — three sets.
+3. **Steppers, not keyboards** — per-exercise increments (2.5 kg default, 1 kg for
+   lateral raises, 5 kg for deadlift), long-press to accelerate
+4. **Auto rest timer** — a real scheduled notification, fires with the app closed
+5. **Quick-entry text**: `bp 60x8x3`
+6. **Voice entry**: "bench press sixty kilos eight reps" → confirmation chip
+7. **Fully offline** — logging never touches the network
+8. **Body weight**: one sheet, date defaults to today, value defaults to last entry
 
-1. **"Same as last time"** at the top of every exercise — one tap logs the whole thing.
-2. **Repeat-set button**, bottom of screen, thumb-reachable. Most sets repeat the
-   previous one. Tap, tap, tap — three sets done.
-3. **Steppers, not keyboards.** `−`/`+` at a per-exercise increment (2.5 kg default,
-   1 kg for lateral raises, 5 kg for deadlift). Long-press to accelerate.
-4. **Auto rest timer** on set completion — a real scheduled notification, so it fires
-   whether or not the app is in front. This is the concrete payoff of going native.
-5. **Quick-entry text**: `bp 60x8x3` → bench press, 60 kg, 8 reps, 3 sets.
-6. **Voice entry**: "bench press sixty kilos eight reps" → a confirmation chip.
-7. **Fully offline.** Logging never touches the network, so a basement gym changes nothing.
-8. **Body weight**: one sheet, date defaults to today, value defaults to your last
-   entry. Two taps.
-
-Items 1–4 and 7–8 are Phase 2 and carry nearly all the speed. 5–6 are Phase 8 polish.
+Items 1–4 and 7–8 are Phase 2 and carry nearly all the speed. 5–6 are polish.
 
 ---
 
-## 7. Planning a session with no fixed program
+## 8. Planning a session with no fixed program
 
-You don't follow a fixed program, so "what am I doing today?" is a real question
-rather than a lookup. Four ways to start, all one tap from home:
+You don't follow a fixed program, so "what am I doing today?" is a real question.
+Four ways to start, all one tap from home:
 
-| Start mode | `origin` | What it does |
+| Mode | `origin` | What it does |
 |---|---|---|
 | **Repeat** | `repeat` | Re-runs a previous session, prefilled. Probably your default. |
-| **Ad hoc** | `adhoc` | Empty session, add as you go. |
-| **From a saved routine** | `routine` | If you've saved one. Optional, never required. |
-| **Generated** | `generated` | "I have 30 minutes, build me something" — the LLM proposes a session. |
+| **Ad hoc** | `adhoc` | Empty session, add as you go |
+| **From a routine** | `routine` | If you've saved one. Optional, never required. |
+| **Generated** | `generated` | "I have 30 minutes, build me something" |
 
-Because there's no program to fall back on, the **generate** path matters more than it
-otherwise would, and needs real inputs rather than guesswork: time available,
-equipment likely free, and above all **what you've actually trained recently**.
 `suggest_session` reads the last two weeks, weights toward neglected muscle groups,
 and avoids anything trained in the last 48 hours.
 
-**Save-as-routine after the fact.** Rather than defining programs up front, any
-session you liked gets a "save as routine" button. Templates accumulate from what you
-actually did. That fits how you train.
+**Save-as-routine after the fact.** Any session you liked gets a "save as routine"
+button, so templates accumulate from what you actually did rather than what you
+planned up front.
 
-### The plan of record
-
-Whichever mode you start in, the session's initial exercise list is snapshotted as
-that day's **plan of record**. This is what makes §8 work without a fixed program —
-"substitution" needs something to have been planned, and now there always is one,
-even on an ad-hoc or generated day.
+**The plan of record:** whichever mode you start in, the session's initial exercise
+list is snapshotted. This is what makes §9 work without a fixed program —
+"substitution" needs something to have been planned, and now there always is one.
 
 ---
 
-## 8. Substitutions, and today vs. next week
-
-Your case: the leg press is occupied, so you do hack squats, and later you want to ask
-what you usually do in that situation.
+## 9. Substitutions, and today vs. next week
 
 A substitution is **not** a separate kind of entry. It's a normal `session_exercises`
 row that remembers what it replaced:
@@ -270,35 +324,24 @@ row that remembers what it replaced:
 {
   session_id:          "…",
   exercise_id:         "hack-squat",      // what you actually did
-  planned_exercise_id: "leg-press",       // from the plan of record (§7)
+  planned_exercise_id: "leg-press",       // from the plan of record
   substitution_reason: "equipment_busy",  // busy | time | injury | preference | closed | other
 }
 ```
 
-In the UI: **swipe or tap Swap on any exercise**, two taps total.
+**Two taps:** tap Swap → pick from a ranked list (substitutes you've *actually used
+before* first, then same-muscle/same-equipment candidates). Reason defaults to
+"equipment busy".
 
-1. Tap **Swap**.
-2. Pick from a ranked list — substitutes you've *actually used before* first, then
-   same-muscle/same-equipment candidates. Reason defaults to "equipment busy" and is
-   one tap to change.
-
-Because this is structured data rather than a free-text note, it becomes answerable —
-by the in-app chat and the MCP tools alike:
+Because it's structured data rather than a free-text note, it becomes answerable:
 
 - "What do I usually do when the leg press is taken?"
 - "How often did I skip leg press last month, and why?"
 - "Is my hack squat progressing as well as my leg press was?"
 
-That last one only works because both exercises keep their identity. A note saying
-"did hack squats instead" would lose it.
-
 ### Scope: today, or from now on?
 
-**The rule: every LLM-driven change defaults to `scope: 'today'`. Next week is
-unaffected.**
-
-Safe, reversible, and it matches reality — the machine was busy *today*. Every tool
-carries an explicit scope so the model cannot be vague:
+**Every LLM-driven change defaults to `scope: 'today'`. Next week is unaffected.**
 
 ```ts
 replace_exercise({
@@ -308,43 +351,32 @@ replace_exercise({
 })
 ```
 
-| What you say | Scope | Effect next week |
+| What you say | Scope | Next week |
 |---|---|---|
-| "Leg press is taken, what instead?" | today | None |
-| "No time, make it quick" | today (generated session) | None |
+| "Leg press is taken, what instead?" | today | Unchanged |
+| "No time, make it quick" | today | Unchanged |
 | "I don't like this exercise" | **ambiguous → the model asks** | Depends on your answer |
 | "Swap leg press for hack squat in my program" | routine | Permanent |
 
-Two rules on top:
-
 - **`scope: 'routine'` always requires your confirmation.** The model proposes a diff,
-  you approve it. This is a security boundary as much as a UX one — §11.
-- **Promotion by pattern.** Swapped leg press → hack squat in 4 of the last 5 sessions?
-  The app asks once: "Make hack squat the default?" Suggested, never automatic.
-
-Routines are **versioned**, so editing one today doesn't make last month's sessions
-retroactively look like deviations. Without versioning, history stops being
-interpretable after a few months of edits.
+  you approve. This is a security boundary as much as a UX one (§12).
+- **Promotion by pattern.** Swapped 4 of the last 5 sessions? The app asks once.
+  Suggested, never automatic.
+- **Routines are versioned**, so editing one today doesn't make last month's sessions
+  retroactively look like deviations.
 
 ---
 
-## 9. The LLM layer
+## 10. The LLM layer
 
 ### Context builder
 
-One function in `packages/llm` assembles:
+Assembles profile, recent sessions (compacted), body-weight trend as weekly averages,
+current PRs, and recent substitutions with reasons. **Token-budgeted** with a defined
+trim order, **versioned**, and **cached** with invalidation on write. The same builder
+feeds the in-app chat and the MCP prompts, so they can't drift.
 
-- Profile (goals, experience, constraints, units)
-- Last N sessions, compacted
-- Body weight trend — weekly averages, not raw dailies (daily weight is noise)
-- Current PRs per main lift
-- Recent substitutions with reasons
-
-It is **token-budgeted** (a target, and a defined order in which sections get trimmed),
-**versioned**, and **cached** with invalidation on write. The same builder feeds the
-in-app chat and the MCP prompts, so the two can't drift.
-
-**Per-request context toggles** let you exclude profile or body weight — §11.
+**Per-request context toggles** let you exclude profile or body weight (§12).
 
 ### Provider registry
 
@@ -357,293 +389,253 @@ interface LLMProvider {
 }
 ```
 
-One adapter file plus a registry entry per provider. Nothing else changes.
-
-**No CORS constraint** — unlike the browser plan, every provider is available. Free
-options to start (verify current limits; free tiers change):
-
-- **Google Gemini** — a genuine free tier, generous for personal use.
-- **OpenRouter** — some free models, one key reaches many.
-- **Groq** — free tier, very fast, which makes side-by-side feel good.
-- **Ollama** on your laptop — free, unlimited, and nothing leaves your network.
-
-Paid providers (Anthropic, OpenAI) are the same interface if you ever want one.
+One adapter file plus a registry entry per provider. **No CORS constraint**, so every
+provider is available. Free options to start (verify current limits — free tiers
+change): **Gemini**, **OpenRouter**, **Groq**, and **Ollama** on your laptop.
 
 ### Parallel, side by side
 
-Select 2–3 providers; the app fans out with `Promise.allSettled` and streams each
-response into its own column.
+`Promise.allSettled` across selected providers, each streaming into its own column.
+**Failure is isolated** — `allSettled`, not `all`, so one provider timing out leaves
+the others streaming. Per-column latency, token count, and error state. Pin the best
+answer to save it.
 
-- **Failure is isolated** — `allSettled`, not `all`. One provider timing out leaves
-  the others streaming.
-- Per-column status: latency, token count, model, error state.
-- Horizontal paged columns with snap, native gesture handling.
-- **Pin the best answer** to save it to the thread or attach it to a workout note.
+### Tools
 
----
-
-## 10. Body weight, Fitelo, and Health Connect
-
-**Fitelo has no public API**, and scraping it is out — brittle, and likely against
-their terms. But going native opens a path the browser plan couldn't reach.
-
-**Health Connect** is Android's shared health store. Any fitness app can write to it,
-and any app with permission can read it. **If Fitelo writes your body weight to Health
-Connect, fitai can read it automatically** — no screenshots, no OCR, no scraping. Just
-a supported Android API, with your explicit permission grant.
-
-> **Action item: check whether Fitelo has a Health Connect or Google Fit toggle in its
-> settings.** If it does, this solves your original requirement properly, and Phase 7
-> moves up to Phase 1.
-
-Fallbacks, in order of preference:
-
-| Approach | Notes |
-|---|---|
-| **Health Connect sync** | Best. Automatic, supported, revocable. |
-| **BLE smart scale** via Health Connect or direct | Works if you own one; many cheap scales use proprietary protocols. |
-| **Screenshot → LLM reads it → bulk insert** | Reliable fallback. Duplicate dates skipped, so re-sending is safe. |
-| **CSV export, if Fitelo offers one** | Best for a one-time backfill of history. |
-| Manual entry | Two taps (§6). Always available. |
+`packages/tools` is the single definition of what an LLM may do to your data — used
+by in-app function calling and by the optional MCP wrapper (Phase 11). Narrow, typed,
+zod-validated. **No `delete_all`, no `execute_sql`, no general-purpose tool.**
 
 ---
 
-## 11. Security
+## 11. Body weight, Fitelo, and Health Connect
 
-Single user, no server, no exposed surface. The risk is low — and moving off the
-browser removed the largest threat outright.
+**Fitelo has no public API**, and scraping it is out — brittle and likely against
+their terms. But going native opens a path the browser couldn't reach.
 
-### What changed for the better
+**Health Connect** is Android's shared health store. **If Fitelo writes your body
+weight there, fitai can read it automatically** — no screenshots, no OCR, no scraping.
 
-**XSS is essentially gone.** In the PWA plan, the top risk was script injection via
-rendered model output — a markdown renderer allowing raw HTML turning an LLM response
-into executing code. React Native has no DOM and no HTML: markdown renders to native
-components, and there is no `eval` path from model text. The entire class disappears.
+> **Action item: check whether Fitelo has a Health Connect or Google Fit toggle.**
+> If it does, Phase 8 moves to Phase 1 — this stops being a nice-to-have.
 
-**API keys are properly protected.** `expo-secure-store` puts them in the Android
-Keystore, hardware-backed on most modern devices — not in storage any code on the
-origin could read.
+Fallbacks in order: BLE smart scale → screenshot read by an LLM and bulk-imported
+(duplicate dates skipped, so re-sending is safe) → CSV export if Fitelo has one →
+manual entry, always two taps.
 
-### What can reach your data
+---
 
-| Attacker | Can they? | Why |
-|---|---|---|
-| Another installed app | **No** | Android app sandboxing. |
-| Someone with your unlocked phone | **Yes** | Device lock is the only control. |
-| Someone with your locked phone | No, in practice | Android full-disk encryption, on by default. |
-| Rooted phone / malicious accessibility service | Yes | Outside what any app can defend. |
+## 12. Security
 
-### The remaining real risks
+Single user, no server, no exposed surface — risk is low, and going native removed the
+largest threat outright.
 
-**1. Prompt injection — the main one now, because the LLM holds write tools.**
-Untrusted text reaches the model: a Fitelo screenshot's contents, an exercise name
-pasted from a website. A crafted string could try to trigger a routine-wide change or
-data loss.
+**XSS is gone.** In the PWA plan the top risk was script injection via rendered model
+output. React Native has no DOM and no HTML — markdown renders to native components,
+and there is no path from model text to executing code.
 
-- The confirmation gate on `scope: 'routine'` (§8) is the boundary. The model
-  proposes; you approve.
-- **No `delete_all`, no `execute_sql`, no general-purpose tool.** Narrow typed tools
-  only — a capability that doesn't exist can't be abused.
-- Every tool argument validated with zod.
-- OCR'd screenshot text is data, never instructions.
+**API keys are properly protected** — `expo-secure-store` uses the Android Keystore,
+hardware-backed on most modern devices.
+
+### Remaining real risks
+
+**1. Prompt injection — the main one, because the LLM holds write tools.** Untrusted
+text reaches the model via screenshots or pasted exercise names.
+
+- The confirmation gate on `scope: 'routine'` is the boundary
+- **No `delete_all`, no `execute_sql`, no general-purpose tool** — a capability that
+  doesn't exist can't be abused
+- Every tool argument zod-validated; OCR'd text is data, never instructions
 
 **2. Supply chain.** A malicious npm package ships inside your APK with full app
-permissions. Keep dependencies few, commit the lockfile, enable Dependabot, and be
-cautious with community native modules.
+permissions. Few dependencies, committed lockfile, Dependabot on.
 
-**3. Sideloading hygiene.** Install only APKs you built yourself. Never an APK from
-anywhere else claiming to be your app.
+**3. Sideloading hygiene.** Only install APKs you built yourself.
 
-**4. Key restriction.** Free tier or a hard billing cap, so a leaked key can't cost
-money. Restrict by app signature where the provider supports it.
+**4. Key restriction.** Free tier or a hard billing cap, so a leaked key can't cost money.
+
+### From Phase 9 (multi-user)
+
+Row-level scoping by `user_id` on **every** query — enforced by the repository, never
+left to call sites. A missed scope is a data leak between users, which is why §5
+Rule 6 exists from day one. Plus: HTTPS only, rate limiting, and account deletion
+(in-app *and* web) as Play Store requires.
 
 ### Not a vulnerability, but a real cost
 
-When you use the chat, your workout history, body weight, and profile **are sent to
-Google / OpenRouter / Groq**. Free tiers often reserve broader rights over submitted
-data than paid tiers — check current terms. If that matters, Ollama keeps everything
-on your own network, and the per-request context toggles (§9) let you ask an exercise
-question without shipping your weight history.
+Your workout history, body weight, and profile **are sent to Google / OpenRouter /
+Groq** when you chat. Free tiers often reserve broader rights over submitted data —
+check current terms. Ollama keeps everything on your own network, and the per-request
+context toggles let you ask an exercise question without shipping your weight history.
 
 ---
 
-## 12. Backup and rewind
-
-Two mechanisms, because "undo what the LLM just did" and "restore last Tuesday" are
-different problems.
+## 13. Backup and rewind
 
 ### Change journal — undoing the LLM
 
-Every mutation, yours or the model's, appends a row:
-
 ```ts
 { id, timestamp, actor: 'user' | 'llm', provider, tool,
-  entity, before_json, after_json, batch_id }
+  entity, before_json, after_json, batch_id, synced_at }
 ```
 
-One LLM turn is one `batch_id`, so **"undo that" reverts the whole turn atomically** —
-not three separate undos for one instruction. Because `before_json` is stored, undo is
-a direct restore, not a replay of inverse operations.
+One LLM turn is one `batch_id`, so **"undo that" reverts the whole turn atomically**.
+Because `before_json` is stored, undo is a direct restore, not a replay of inverse
+operations.
 
-The UI is a **History screen**: reverse-chronological, actor badges —
-*"Gemini modified Push A · 2 min ago · \[Undo]"*. You see exactly what the model
-touched and reverse it in one tap.
+The **History screen** lists changes reverse-chronologically with actor badges —
+*"Gemini modified Push A · 2 min ago · \[Undo]"*.
 
-Combined with preview-before-commit on routine-scope changes, most unwanted LLM edits
-never land at all. The journal catches the rest.
+Combined with preview-before-commit on routine-scope changes, most unwanted edits
+never land. The journal catches the rest. And per §5 Rule 4, this same table is the
+sync outbox.
 
 ### Snapshots — restoring a point in time
 
-The database is one file, so a snapshot is a file copy.
-
-- **Automatic**: after every logged session, plus daily.
-- Retention: last 7 daily + 4 weekly. A few MB each — costs nothing.
-- **Restore** previews the snapshot (date, session count, last entry) before you
-  confirm, and takes a pre-restore snapshot first, so restoring is itself undoable.
+The database is one file, so a snapshot is a file copy. Automatic after every session
+plus daily; retention 7 daily + 4 weekly. **Restore** previews the snapshot before you
+confirm and takes a pre-restore snapshot first, so restoring is itself undoable.
 
 ### Getting backups off the phone
 
-Two layers, both free:
-
-1. **Storage Access Framework** — you pick a folder once, the app writes backups there
-   with no further prompting. Point it at a Google Drive-synced folder and off-device
-   backup is automatic.
-2. **Android auto-backup** — with `allowBackup` enabled, Android periodically backs the
-   app's data to your Google Drive on its own, invisibly, within your existing quota.
-
-Native storage also removes the PWA's failure mode entirely: clearing Chrome's data has
-no effect on an app sandbox. Only uninstalling, or clearing this app's data
-specifically, touches it.
+1. **Storage Access Framework** — pick a folder once, the app writes there
+   unprompted. Point it at a Google Drive-synced folder and off-device backup is automatic.
+2. **Android auto-backup** — the OS periodically backs app data to your Drive within
+   existing quota.
 
 ---
 
-## 13. Phases
+## 14. Folder structure and code conventions
+
+The repo should be legible to someone who doesn't code, just by reading folder names.
+The full tree is in **[docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md)**. The principles:
+
+- **Feature-first, not type-first.** `features/workout-logging/` beats scattering the
+  same feature across `components/`, `hooks/`, and `utils/`.
+- **A `README.md` in every feature folder**, in plain English: what this does, which
+  screens use it, which tables it touches.
+- **`docs/GLOSSARY.md`** defines domain terms — set, rep, RPE, plan of record,
+  substitution scope — so nobody has to infer them from code.
+- **Small components.** One job each. If a file passes ~150 lines it probably wants
+  splitting; if a component takes more than ~5 props it probably wants composing.
+- **Hooks hold logic, components hold layout.** A component that fetches, transforms,
+  and renders is three things.
+- **Named exports only**, no default exports — renames stay greppable.
+- **Absolute imports** via `@/` — no `../../../`.
+- **Every folder has one obvious owner.** If you can't tell where a file belongs, the
+  structure is wrong, not the file.
+
+---
+
+## 15. Making the repo legible to an LLM
+
+You asked how to structure this so an LLM picks up the project quickly. Four layers,
+and they're the same things that help a human:
+
+**1. `CLAUDE.md` at the root** — the entry point. What the project is, the repo map,
+the invariants that must never be broken (never import `db` outside the repository;
+every operation async; `Result` not exceptions; scope defaults to today; no
+destructive tools), the commands, and where to look for what. Already written.
+
+**2. `.claude/skills/` — repeatable recipes** for the tasks that recur, so the steps
+aren't rediscovered each time:
+
+| Skill | Covers |
+|---|---|
+| `add-llm-provider` | Adapter file, registry entry, settings UI, tests |
+| `add-tool` | Contract → zod schema → implementation → journal entry → confirmation gate → tests |
+| `add-migration` | Schema change, drizzle-kit generate, both dialects, backfill |
+| `add-feature` | Folder scaffold, README, route, query keys |
+
+**3. `docs/adr/` — architecture decision records.** Short numbered files: the decision,
+why, and what was rejected. An LLM (or you in six months) reading `0004-react-query-not-uselivequery.md`
+won't "helpfully" reintroduce the thing we deliberately declined.
+
+**4. Feature READMEs and the glossary** (§14) — domain context that isn't inferable
+from code.
+
+The through-line: **encode intent, not just implementation.** Code shows what happens;
+these show what was decided and why.
+
+---
+
+## 16. Phases
 
 Each phase ends with something usable.
 
-### Phase 0 — Foundation
-Expo app scaffold, Expo Router, NativeWind, Drizzle schema and migrations (including
-`routine_versions` and `change_journal` from day one), seeded exercise library,
-dependency policy, ADRs for §2/§3/§8. CI running typecheck + tests.
-*Done when:* the app boots on your phone and the schema migrates cleanly.
+| Phase | Deliverable | Done when |
+|---|---|---|
+| **0 — Foundation** | Expo scaffold, Expo Router, NativeWind, Drizzle schema + migrations, multi-tenant `user_id`, repository interface, `Result` type, contract package, React Query + Jotai wiring, seeded exercise library, CLAUDE.md, ADRs, CI | The app boots and the schema migrates cleanly |
+| **1 — Log things** | Sessions, exercises, sets, body weight, history. **Snapshots and Drive backup ship here.** | You log a real session in airplane mode and a backup lands in Drive |
+| **2 — Make it fast** | §7 in full, including the background rest timer | A full session takes under 90 seconds of screen time |
+| **3 — Session planning** | The four start modes, plan of record, save-as-routine, `suggest_session` | Starting a session never needs typing an exercise name |
+| **4 — Substitutions** | Swap flow, history-ranked substitutes, reasons, routine versioning | Two-tap swap, and "what do I do when the leg press is taken?" has a real answer |
+| **5 — Chat with tools** | Context builder, one provider, streaming, function calling, scope model, journal + undo UI | "I have 30 minutes, build me something" works in the gym — and you can undo it |
+| **6 — Multi-LLM** | Provider registry with 3+ adapters, parallel fan-out, columns, pin-best | Three columns streaming together; one failing doesn't break the others |
+| **7 — Charts & polish** | Body-weight trend, per-exercise progression, PR detection, quick-entry DSL, voice | You can see whether you're actually progressing |
+| **8 — Health Connect** | Dev build, permissions, body-weight sync, dedupe | Fitelo weights appear without typing. **Moves to Phase 1 if Fitelo writes to Health Connect.** |
+| **9 — Backend & multi-user** | Hono + Postgres + Better Auth under Docker Compose, sync engine draining the outbox, deployed when it must be reachable | Two devices agree, and no screen changed to make it happen |
+| **10 — Play Store** | 12-tester closed test, privacy policy, Data Safety, account deletion, health-data policy | It's live |
+| **11 — Desktop MCP** | `npx @fitai/mcp` over an exported DB, laptop viewer, Fitelo backfill via Claude Desktop | Bulk work from a laptop |
 
-### Phase 1 — Log things
-Create a session, add exercises, log sets, log body weight, browse history. Snapshots
-and Drive-folder backup ship **here, not later**.
-*Done when:* you log a real session on your phone in airplane mode, and a backup lands
-in your Drive folder.
-
-### Phase 2 — Make it fast
-Everything in §6: last-time prefill, "same as last time", repeat-set, steppers with
-per-exercise increments, **rest timer with real background notifications**, two-tap
-body weight.
-*Done when:* a full session takes under 90 seconds of screen time.
-
-### Phase 3 — Sessions without a program
-The four start modes in §7, plan-of-record snapshotting, save-as-routine,
-recency-aware `suggest_session`.
-*Done when:* starting a session never requires typing an exercise name from scratch.
-
-### Phase 4 — Substitutions
-Swap flow, history-ranked substitutes, reasons, substitution history view, routine
-versioning.
-*Done when:* you can swap in two taps, and "what do I do when the leg press is taken?"
-has a real answer in your data.
-
-### Phase 5 — In-app chat with tools
-Context builder, one provider, streaming chat, function calling wired to
-`packages/tools`, the scope model from §8, change journal + undo UI.
-*Done when:* **"I have 30 minutes, build me something" and "leg press is busy, what
-instead?" both work in the gym — and you can undo either.**
-
-### Phase 6 — Multi-LLM side by side
-Provider registry with 3+ adapters, parallel fan-out, column UI, pin-best-answer,
-per-provider settings.
-*Done when:* one question, three columns streaming together, one failing doesn't break
-the others.
-
-### Phase 7 — Health Connect
-Development build, permissions flow, body-weight read and sync, dedupe against manual
-entries.
-*Done when:* your Fitelo weights appear in fitai without you typing them.
-**Move this to Phase 1 if Fitelo turns out to write to Health Connect** — it's a core
-requirement, not a nice-to-have.
-
-### Phase 8 — Laptop viewer, MCP, polish
-A small read-only web viewer that opens an exported `.db` (§3 — decoupled, can't
-corrupt your data), the `npx @fitai/mcp` wrapper, charts, PR detection, quick-entry
-DSL, voice entry.
-
-Phases 1–4 are the app you'd use daily even if everything after were cancelled. That
-ordering is deliberate.
+**Phases 1–4 are the product.** Everything after is genuinely optional.
 
 ---
 
-## 14. What this costs
+## 17. What this costs
 
 | Item | Cost |
 |---|---|
-| GitHub repo | Free |
-| SQLite on your phone | Free |
-| Distribution (sideloaded APK) | Free — no Play Store fee |
-| EAS Build | Free tier has a monthly build quota; local `expo run:android` is unlimited |
+| GitHub, SQLite on phone, sideloaded APK | Free |
+| EAS Build | Free monthly quota; local `expo run:android` unlimited |
 | Backups to Google Drive | Free within existing quota |
 | Gemini / OpenRouter / Groq free tiers | Free, rate-limited |
-| Ollama on your laptop | Free, unlimited, offline; needs decent RAM |
-| Laptop viewer hosting (Phase 8) | Free tier |
-| Anthropic / OpenAI APIs | **Pay per token — no free tier.** Optional. |
+| Ollama on your laptop | Free, unlimited, offline |
+| Backend, local Docker (Phase 9) | Free |
+| Backend, hosted (when others use it) | Free tiers exist; realistically ₹0–400/month for a small user base |
+| Play Store registration (Phase 10) | **₹2,000 one-time** |
+| Anthropic / OpenAI APIs | Pay per token — optional |
 
-**₹0 for the entire plan** on free-tier LLMs or Ollama. The only way to spend money is
-deliberately adding a paid provider. Free-tier terms change — verify before relying on
-them.
+**₹0 through Phase 9.** The first unavoidable cost is Play Store registration.
 
----
-
-## 15. If you ever want the cloud
-
-Not planned, not blocked. The groundwork is already in Phase 0/1:
-
-1. **Database** — Drizzle's schema is dialect-portable. Point it at Postgres or Turso
-   and migrate the file with a one-off script.
-2. **Sync** — uuid keys plus `updated_at`/`deleted_at` are already there. Single user
-   with one active device means last-write-wins is sufficient.
-3. **Auth** — the genuinely new work, and the one item not to defer past the day the
-   data gets a public URL.
-
-Every enabling detail is nearly free now and expensive to retrofit. That's why they're
-in Phase 0 despite there being no server.
+**One economic warning for Phase 10:** LLM costs scale with users and you'd have no
+revenue. Decide before building the proxy — **bring-your-own-key** keeps your ₹0
+promise and is honestly fine for a niche lifting app; the alternatives are hard caps
+per user, or charging.
 
 ---
 
-## 16. Risks
+## 18. Risks
 
 | Risk | Mitigation |
 |---|---|
-| Logging isn't fast enough and you go back to a notes app | Phase 2 exists for this; its exit criterion is a stopwatch measurement, not an opinion. |
-| React Native learning curve stalls Phase 1 | Expo removes most of the sharp edges, and Phases 0–6 run in Expo Go without native build setup. |
-| LLM makes a change you don't want | Default `scope: 'today'`, confirmation on routine changes, full undo via journal. Three layers. |
-| Prompt injection via screenshot or pasted text | Narrow typed tools, zod validation, confirmation gate on persistent changes. |
-| Fitelo doesn't write to Health Connect | Screenshot import still works (§10). Requirement met, just less elegantly. |
-| Free LLM tiers get restricted | Provider registry makes switching one adapter. Ollama is the floor — it can't be withdrawn. |
-| Scope creep across 8 phases | Phases 1–4 are the product. 5–8 are genuinely optional. |
+| Logging isn't fast enough and you go back to a notes app | Phase 2's exit criterion is a stopwatch measurement, not an opinion |
+| React Native learning curve stalls Phase 1 | Expo removes most sharp edges; Phases 0–7 run in Expo Go |
+| LLM makes a change you don't want | Default `scope: 'today'`, confirmation on routine changes, full undo. Three layers. |
+| Prompt injection | Narrow typed tools, zod validation, confirmation gate |
+| Fitelo doesn't write to Health Connect | Screenshot import still works |
+| Free LLM tiers get restricted | Provider registry makes switching one adapter; Ollama is the floor |
+| Phase 9 turns into a rewrite | §5 exists entirely to prevent this |
+| Scope creep across 11 phases | Phases 1–4 are the product |
 
 ---
 
-## 17. Settled decisions
+## 19. Settled decisions
 
 | Question | Answer |
 |---|---|
-| Platform | **Android**, React Native via **Expo** |
-| Backend | **None.** The phone is the whole system. |
-| Database | `expo-sqlite` + Drizzle, one file in the app sandbox |
-| Distribution | Sideloaded APK — no store, no fees |
-| Training program | **None fixed** — ad-hoc and generated sessions are first-class (§7) |
+| Platform | Android, React Native via **Expo** |
+| Backend | **None until Phase 9** — but the schema, repository, and contract are built for it from Phase 0 |
+| Database | `expo-sqlite` + Drizzle on device; Postgres on the server later |
+| State | **React Query** for database-backed state, **Jotai** for UI state |
+| Multi-user | Schema is multi-tenant from day one; auth at Phase 9 |
+| Distribution | Sideloaded APK now, Play Store at Phase 10 |
+| Training program | None fixed — ad-hoc and generated sessions are first-class |
 | Units | kg |
-| Backups | Automatic snapshots → Drive folder via SAF, plus Android auto-backup |
-| Laptop access | Separate read-only viewer in Phase 8, not React Native Web |
+| Backups | Snapshots → Drive folder via SAF, plus Android auto-backup |
 
 **Open action item:** check whether Fitelo writes body weight to Health Connect. If it
-does, Phase 7 moves to the front.
+does, Phase 8 moves to the front.
 
 ---
 
