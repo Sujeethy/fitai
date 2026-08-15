@@ -10,7 +10,10 @@ import type { ExpoConfig } from 'expo/config';
 const config: ExpoConfig = {
   name: 'fitai',
   slug: 'fitai',
-  version: '0.1.0',
+  // Bumped for the SDK 52 -> 57 upgrade. `runtimeVersion` follows `version`, so this
+  // is what stops an OTA update carrying SDK 57 JavaScript from reaching an older
+  // SDK 52 APK and crashing it on launch. See docs/DEPLOYMENT.md §4.
+  version: '0.2.0',
   orientation: 'portrait',
   scheme: 'fitai',
   userInterfaceStyle: 'dark',
