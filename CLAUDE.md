@@ -160,3 +160,6 @@ Ordered by how often they'd be "fixed" by mistake:
 | `contract/` describes an API that doesn't exist | The backend implements it in Phase 9. Designing it now means it's been exercised for months. |
 | Pagination arguments the local implementation ignores | Same reason. |
 | `packages/api` exists but is empty | Placeholder for Phase 9. Leave it. |
+| `nativewind` pinned to `4.1.23`, not `^4.1` | 4.2.x requires `react-native-worklets/plugin` unconditionally, and that ships only with Reanimated 4. Expo SDK 52 is on Reanimated 3, so 4.2.x cannot bundle. Unpin only when moving to Reanimated 4. |
+| `react-native-reanimated` pinned to `3.16.1` and listed though unused | NativeWind needs it as a peer, so it is in the tree regardless. 3.16.7 moved its Babel plugin behind `react-native-worklets`. |
+| `.npmrc` sets `node-linker=hoisted` | Metro cannot follow pnpm's symlinked layout — `@expo/metro-runtime` and other peers fail to resolve. Standard for Expo in a pnpm monorepo. |
