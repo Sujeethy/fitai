@@ -91,7 +91,58 @@ receive the update.
 
 ---
 
-## 5. Phase 9 — the backend
+## 5. Automation (GitHub Actions)
+
+The workflows themselves are a Phase 0 deliverable. The design:
+
+| Job | Trigger | Why |
+|---|---|---|
+| **Checks** — typecheck, lint, test | Every push and PR | Free (public repo), and catches mistakes before they reach your phone |
+| **`eas update`** | Push to `main`, after checks pass | Fast and effectively unlimited |
+| **`eas build`** | Manual (`workflow_dispatch`) or a `v*` tag | Slow, and the free tier has a monthly build quota — never automate this |
+
+**Do not auto-build on every push.** It would exhaust the EAS build quota within days
+for no benefit, since native changes are rare. Updates are the cheap thing; builds are
+the expensive thing.
+
+**Work on feature branches.** With `eas update` firing on every merge to `main`,
+half-finished work on `main` means half-finished work on your phone — possibly
+mid-workout.
+
+Requires an `EXPO_TOKEN` in the repository's GitHub secrets.
+
+### Enforce the invariants in CI, not just in CLAUDE.md
+
+The architectural rules in [CLAUDE.md](../CLAUDE.md) are load-bearing, and
+documentation alone doesn't hold. Encode them as lint rules so CI fails when they're
+broken:
+
+```js
+// eslint.config.js
+'no-restricted-imports': ['error', {
+  patterns: [{
+    group: ['**/core/db', 'drizzle-orm/*'],
+    message: 'Only packages/core/repository may touch the database. See CLAUDE.md.',
+  }],
+}]
+```
+
+Worth enforcing this way:
+
+| Rule | How |
+|---|---|
+| Only the repository imports the database | `no-restricted-imports` (above) |
+| No default exports | `import/no-default-export` |
+| No `../../../` imports | `no-restricted-imports` with a relative-path pattern |
+| Query keys come from `queryKeys.ts` | Custom rule or a `no-restricted-syntax` check |
+| Schema and migrations agree | `drizzle-kit check` as a CI step |
+
+Six months from now — or with an LLM making changes — these hold on their own instead
+of depending on someone having read the docs.
+
+---
+
+## 6. Phase 9 — the backend
 
 ```bash
 git push        # the host builds and deploys on push
@@ -110,7 +161,12 @@ backward-compatible.** Someone will be running a three-month-old build.
 
 ---
 
-## 6. Phase 10 — Play Store
+Most hosts deploy on push to `main` on their own, so there is usually no workflow to
+write. Cloudflare Workers is the exception — add a job running `wrangler deploy`.
+
+---
+
+## 7. Phase 10 — Play Store
 
 ```bash
 eas build --profile production      # produces an .aab
@@ -140,7 +196,10 @@ not for changing what the app fundamentally does.)
 | Situation | Command |
 |---|---|
 | Developing | `pnpm dev` |
-| Ship a JS change to your installed app | `eas update --branch preview` |
-| Added a native library | `eas build -p android --profile preview`, then reinstall |
+| Ship a JS change to your installed app | `git push` to `main` — CI runs `eas update` |
+| Added a native library | Tag `v*` or run the build workflow manually, then reinstall |
 | Ship the backend (Phase 9) | `git push` |
 | Ship to Play Store (Phase 10) | `eas build --profile production && eas submit -p android` |
+
+Once the workflows exist, `git push` is the everyday action — CI checks it and
+publishes the update. Building is the deliberate, occasional one.

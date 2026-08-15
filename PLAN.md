@@ -565,7 +565,7 @@ Each phase ends with something usable.
 
 | Phase | Deliverable | Done when |
 |---|---|---|
-| **0 — Foundation** | Expo scaffold, Expo Router, NativeWind, Drizzle schema + migrations, multi-tenant `user_id`, repository interface, `Result` type, contract package, React Query + Jotai wiring, seeded exercise library, CLAUDE.md, ADRs, CI | The app boots and the schema migrates cleanly |
+| **0 — Foundation** | Expo scaffold, Expo Router, NativeWind, Drizzle schema + migrations, multi-tenant `user_id`, repository interface, `Result` type, contract package, React Query + Jotai wiring, seeded exercise library, CLAUDE.md, ADRs, `.claude/skills/`, **GitHub Actions (checks + auto `eas update`) and lint rules enforcing the §5 invariants** | The app boots, the schema migrates cleanly, and CI fails if a component imports the database directly |
 | **1 — Log things** | Sessions, exercises, sets, body weight, history. **Snapshots and Drive backup ship here.** | You log a real session in airplane mode and a backup lands in Drive |
 | **2 — Make it fast** | §7 in full, including the background rest timer | A full session takes under 90 seconds of screen time |
 | **3 — Session planning** | The four start modes, plan of record, save-as-routine, `suggest_session` | Starting a session never needs typing an exercise name |
