@@ -2,6 +2,7 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Text, View } from 'react-native';
 import { AppProviders } from '@/providers/AppProviders';
+import { UpdateBanner } from '@/providers/UpdateBanner';
 import { useDatabaseReady } from '@/data/migrate';
 import '../global.css';
 
@@ -12,6 +13,7 @@ export default function RootLayout() {
       <DatabaseGate>
         <Stack screenOptions={{ headerShown: false }} />
       </DatabaseGate>
+      <UpdateBanner />
     </AppProviders>
   );
 }

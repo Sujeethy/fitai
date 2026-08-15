@@ -20,13 +20,30 @@ const config: ExpoConfig = {
   // No `newArchEnabled` flag: from SDK 57 the New Architecture is the only
   // architecture, so the opt-in was removed from ExpoConfig. Behaviour is unchanged.
   runtimeVersion: { policy: 'appVersion' },
+  /**
+   * Over-the-air updates. Without this block `eas update` publishes into the void —
+   * the installed app would never look for a new version.
+   *
+   * `fallbackToCacheTimeout: 0` means launch never blocks on the network: the app
+   * starts instantly from the cached bundle and checks for an update in the
+   * background. A gym with no signal must not mean a slow launch.
+   *
+   * The app then tells you when a new version has downloaded and offers to reload —
+   * see src/providers/UpdateGate.tsx. Without that prompt an update only appears on
+   * the *second* launch after publishing, which is a confusing wait.
+   */
+  updates: {
+    enabled: true,
+    checkAutomatically: 'ON_LOAD',
+    fallbackToCacheTimeout: 0,
+  },
   android: {
     package: 'in.assureai.fitai',
     adaptiveIcon: { backgroundColor: '#0a0a0a' },
     // Android's own backup, in addition to our snapshots. Free durability.
     allowBackup: true,
   },
-  plugins: ['expo-router', 'expo-sqlite', 'expo-secure-store'],
+  plugins: ['expo-router', 'expo-sqlite', 'expo-secure-store', 'expo-updates'],
   experiments: { typedRoutes: true },
 };
 
