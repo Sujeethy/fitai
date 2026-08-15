@@ -4,8 +4,16 @@ An offline-first gym logger for workouts and body weight. A React Native app on 
 Android phone, with no backend, no running costs, and an LLM assistant that has your
 actual training history as context.
 
-**Status: planning.** No code yet. See **[PLAN.md](./PLAN.md)** for the architecture,
-technology choices, security model, and phase-by-phase plan.
+**Status: Phase 0 complete.** The foundation is in place — schema, repository
+interface, contract, app shell, CI. Phase 1 adds actual logging.
+
+```bash
+pnpm install
+pnpm dev          # then scan the QR code with Expo Go
+```
+
+See **[PLAN.md](./PLAN.md)** for the architecture, technology choices, security
+model, and phase-by-phase plan.
 
 ## The idea
 
@@ -34,7 +42,22 @@ wrapper for desktop use. Reasoning in [PLAN.md](./PLAN.md#4-stack).
 
 ## Backend
 
-There isn't one. The phone is the whole system — [why that works](./PLAN.md#2-the-backend-there-isnt-one).
+There isn't one — the phone is the whole system, and it stays that way until Phase 9.
+The schema, repository, and API contract are built for a backend from day one, so
+adding it later is a sync engine rather than a rewrite.
+[Why](./PLAN.md#5-built-now-so-the-backend-is-easy-later).
+
+## Repo map
+
+| Path | What's in it |
+|---|---|
+| `apps/mobile/` | The Expo app |
+| `packages/core/` | Database schema, the repository interface, seed data |
+| `packages/contract/` | Operation payloads and result types — the API, designed before it exists |
+| `docs/ARCHITECTURE.md` | Flowcharts and the folder tree |
+| `docs/DEPLOYMENT.md` | How a change reaches your phone |
+| `docs/adr/` | Decisions, and what was rejected |
+| `CLAUDE.md` | Invariants and conventions |
 
 ## Cost
 
