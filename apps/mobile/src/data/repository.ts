@@ -1,5 +1,11 @@
-import { createLocalRepository, LOCAL_USER_ID, randomUUID, type RepoContext } from '@fitai/core';
-import type { WorkoutRepository } from '@fitai/core';
+import {
+  createLocalBackupRepository,
+  createLocalRepository,
+  LOCAL_USER_ID,
+  randomUUID,
+  type RepoContext,
+} from '@fitai/core';
+import type { BackupRepository, WorkoutRepository } from '@fitai/core';
 import { db } from './db';
 
 /**
@@ -38,3 +44,10 @@ export function setCurrentUser(userId: string): void {
 }
 
 export const repository: WorkoutRepository = createLocalRepository(db, () => context);
+
+/**
+ * Snapshotting the database file. Separate from the workout repository because it
+ * is about the file rather than its contents, but it lives here for the same
+ * reason: nothing outside this layer issues SQL.
+ */
+export const backupRepository: BackupRepository = createLocalBackupRepository(db);
