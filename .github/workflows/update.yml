@@ -10,25 +10,45 @@ jobs:
   update:
     name: eas update
     runs-on: ubuntu-latest
+
+    # Mapped here so steps can test for it. The `secrets` context is not available in
+    # a job-level `if`, but `env` is available to a step-level one.
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
     steps:
+      - name: Skip if EAS is not configured
+        if: env.EXPO_TOKEN == ''
+        run: |
+          echo "No EXPO_TOKEN secret set, so there is nothing to publish to."
+          echo "See docs/DEPLOYMENT.md section 5 to finish the EAS setup."
+          echo "Until then this job succeeds without publishing, rather than"
+          echo "failing every push to main."
+
       - uses: actions/checkout@v4
+        if: env.EXPO_TOKEN != ''
 
       - uses: pnpm/action-setup@v4
+        if: env.EXPO_TOKEN != ''
 
       - uses: actions/setup-node@v4
+        if: env.EXPO_TOKEN != ''
         with:
           node-version: 22
           cache: pnpm
 
       - uses: expo/expo-github-action@v8
+        if: env.EXPO_TOKEN != ''
         with:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
 
       - run: pnpm install --frozen-lockfile
+        if: env.EXPO_TOKEN != ''
 
       # Do not publish something that does not compile.
       - run: pnpm typecheck
+        if: env.EXPO_TOKEN != ''
 
       # The commit message goes through the environment, never through `${{ }}`
       # interpolation. Interpolating it directly builds the shell script with the
@@ -36,6 +56,7 @@ jobs:
       # commands on the runner. Quoting does not help — backticks are substituted
       # inside double quotes. This also keeps multi-line messages in one argument.
       - name: Publish
+        if: env.EXPO_TOKEN != ''
         working-directory: apps/mobile
         env:
           COMMIT_MESSAGE: ${{ github.event.head_commit.message }}

@@ -109,7 +109,28 @@ the expensive thing.
 half-finished work on `main` means half-finished work on your phone — possibly
 mid-workout.
 
-Requires an `EXPO_TOKEN` in the repository's GitHub secrets.
+### One-time EAS setup
+
+The build profiles live in `apps/mobile/eas.json` — `development` (Phase 5, when
+Health Connect needs native modules Expo Go lacks), `preview` (the sideloaded APK you
+actually use), and `production` (the Play Store `.aab` at Phase 10). `appVersionSource`
+is `local`, so `app.config.ts` stays the single source of truth for `version` and the
+`runtimeVersion` derived from it — see §4.
+
+Three steps, done once, and only the first two need a browser:
+
+1. Create a free account at [expo.dev](https://expo.dev), then link this project:
+   ```bash
+   cd apps/mobile && npx eas-cli login && npx eas-cli init
+   ```
+   Because `app.config.ts` is a dynamic config, `eas init` cannot write to it. It
+   prints a project ID — add it by hand as `extra.eas.projectId`.
+2. Generate an access token: expo.dev → **Account Settings → Access Tokens**.
+3. Add it to the repo: **Settings → Secrets and variables → Actions** → new secret
+   named `EXPO_TOKEN`.
+
+Until step 3 is done the update workflow skips itself and passes, rather than failing
+every push to `main`.
 
 ### Enforce the invariants in CI, not just in CLAUDE.md
 
