@@ -4,7 +4,11 @@ import { Text, View } from 'react-native';
 import { AppProviders } from '@/providers/AppProviders';
 import { UpdateBanner } from '@/providers/UpdateBanner';
 import { useDatabaseReady } from '@/data/migrate';
+import { initCrashReporting } from '@/shared/lib/crashReporting';
 import '../global.css';
+
+// Before anything else, so a crash during startup is still reported.
+initCrashReporting();
 
 export default function RootLayout() {
   return (

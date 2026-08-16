@@ -12,6 +12,8 @@
     "@expo/vector-icons": "^15.1.1",
     "@fitai/contract": "workspace:*",
     "@fitai/core": "workspace:*",
+    "@sentry/react-native": "^8.23.0",
+    "@shopify/flash-list": "^2.3.2",
     "@tanstack/react-query": "^5.64.1",
     "drizzle-orm": "^0.45.2",
     "expo": "~57.0.13",

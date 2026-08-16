@@ -60,10 +60,25 @@ const config: ExpoConfig = {
     // Android's own backup, in addition to our snapshots. Free durability.
     allowBackup: true,
   },
-  plugins: ['expo-router', 'expo-sqlite', 'expo-secure-store', 'expo-updates'],
+  plugins: [
+    'expo-router',
+    'expo-sqlite',
+    'expo-secure-store',
+    'expo-updates',
+    // Uploads source maps so a stack trace points at real lines rather than
+    // minified bundle offsets.
+    '@sentry/react-native/expo',
+  ],
   experiments: { typedRoutes: true },
   extra: {
     eas: { projectId: EAS_PROJECT_ID },
+    /**
+     * Set SENTRY_DSN to turn on crash reporting. Left unset the app behaves
+     * identically - see src/shared/lib/crashReporting.ts. It is read from the
+     * environment rather than committed, because a DSN accepts events from
+     * anyone who has it.
+     */
+    sentryDsn: process.env.SENTRY_DSN ?? null,
   },
 };
 

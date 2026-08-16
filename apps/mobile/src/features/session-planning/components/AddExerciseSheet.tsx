@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Modal, Pressable, Text, TextInput, View } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button } from '@/shared/components/Button';
 import { useAddSessionExercise, useExercises } from '@/data/useRepository';
@@ -41,11 +42,16 @@ export function AddExerciseSheet({ sessionId, nextPosition, onClose }: Props) {
           className="mt-4 min-h-[52px] rounded-xl bg-neutral-800 px-4 text-base text-white"
         />
 
-        <ScrollView className="mt-3" keyboardShouldPersistTaps="handled">
-          <View className="gap-1">
-            {(exercises.data?.items ?? []).map((e) => (
+        {/* FlashList recycles rows, so the library stays smooth as you add your
+            own exercises to the ~50 seeded ones. */}
+        <FlashList
+          data={exercises.data?.items ?? []}
+          keyExtractor={(e) => e.id}
+          keyboardShouldPersistTaps="handled"
+          className="mt-3"
+          ItemSeparatorComponent={() => <View className="h-1" />}
+          renderItem={({ item: e }) => (
               <Pressable
-                key={e.id}
                 onPress={() =>
                   add.mutate(
                     {
@@ -69,9 +75,8 @@ export function AddExerciseSheet({ sessionId, nextPosition, onClose }: Props) {
                 </View>
                 <Text className="text-xs text-neutral-600">+{e.incrementKg} kg</Text>
               </Pressable>
-            ))}
-          </View>
-        </ScrollView>
+          )}
+        />
 
         {add.error ? <Text className="mt-2 text-sm text-red-400">{add.error.message}</Text> : null}
 
