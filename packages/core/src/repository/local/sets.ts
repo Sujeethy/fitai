@@ -2,6 +2,7 @@ import { and, desc, eq, isNull, asc } from 'drizzle-orm';
 import {
   err,
   ok,
+  type ExerciseHistoryEntry,
   type LogSetInput,
   type Performance,
   type Result,
@@ -208,6 +209,64 @@ export async function getLastPerformance(
       setType: r.set.setType as SetType,
     })),
   });
+}
+
+/**
+ * Every session this exercise appears in, most recent first — the raw material for
+ * a progression chart. Warmups are excluded, same reasoning as `getLastPerformance`:
+ * they don't reflect what you were actually capable of that day.
+ *
+ * Rows are fetched capped and grouped into sessions in JS rather than with a SQL
+ * GROUP BY, because each session needs its full set list, not an aggregate —
+ * `computeOneRepMaxTrend` (packages/core/src/progress) picks the best set itself.
+ */
+export async function getExerciseHistory(
+  db: FitaiDatabase,
+  ctx: RepoContext,
+  exerciseId: string,
+  opts?: { limit?: number },
+): Promise<Result<readonly ExerciseHistoryEntry[]>> {
+  const rows = await db
+    .select({ set: sets, se: sessionExercises })
+    .from(sets)
+    .innerJoin(sessionExercises, eq(sets.sessionExerciseId, sessionExercises.id))
+    .where(
+      and(
+        eq(sets.userId, ctx.userId),
+        eq(sets.exerciseId, exerciseId),
+        isNull(sets.deletedAt),
+        isNull(sessionExercises.deletedAt),
+      ),
+    )
+    .orderBy(desc(sets.createdAt))
+    .limit(2000);
+
+  const bySession = new Map<string, { date: string; sets: WorkoutSet[] }>();
+  for (const r of rows) {
+    if (r.set.setType === 'warmup') continue;
+
+    const existing = bySession.get(r.se.sessionId);
+    if (existing) {
+      existing.sets.push(toSet(r.set));
+    } else {
+      bySession.set(r.se.sessionId, { date: r.set.createdAt.slice(0, 10), sets: [toSet(r.set)] });
+    }
+  }
+
+  const limit = opts?.limit ?? 30;
+  const entries: ExerciseHistoryEntry[] = [];
+  for (const [sessionId, v] of bySession) {
+    if (entries.length >= limit) break;
+    entries.push({
+      sessionId,
+      date: v.date,
+      sets: [...v.sets]
+        .sort((a, b) => a.position - b.position)
+        .map((s) => ({ weightKg: s.weightKg, reps: s.reps, rpe: s.rpe, setType: s.setType })),
+    });
+  }
+
+  return ok(entries);
 }
 
 /** Sets for one session exercise, in order. */

@@ -99,6 +99,15 @@ export function useLastPerformance(exerciseId: string | undefined) {
   });
 }
 
+/** Feeds the per-exercise progression chart. See docs/NEXT.md §3. */
+export function useExerciseHistory(exerciseId: string | undefined) {
+  return useQuery({
+    queryKey: queryKeys.sessions.history(exerciseId ?? ''),
+    queryFn: () => unwrap(repository.getExerciseHistory(exerciseId as string)),
+    enabled: Boolean(exerciseId),
+  });
+}
+
 export function useBodyWeights(from?: string, to?: string) {
   return useQuery({
     queryKey: queryKeys.bodyWeights.list(from, to),
@@ -139,6 +148,7 @@ export function useLogSet(sessionId: string) {
       void qc.invalidateQueries({
         queryKey: queryKeys.sessions.lastPerformance(set.exerciseId),
       });
+      void qc.invalidateQueries({ queryKey: queryKeys.sessions.history(set.exerciseId) });
       void qc.invalidateQueries({ queryKey: queryKeys.journal.all });
     },
   });

@@ -53,6 +53,7 @@ export function createLocalRepository(
     updateSet: (input) => st.updateSet(db, ctx(), input),
     deleteSet: (id) => st.deleteSet(db, ctx(), id),
     getLastPerformance: (exerciseId) => st.getLastPerformance(db, ctx(), exerciseId),
+    getExerciseHistory: (exerciseId, opts) => st.getExerciseHistory(db, ctx(), exerciseId, opts),
 
     // -- Body weight --------------------------------------------------------
     listBodyWeights: (q) => bw.listBodyWeights(db, ctx(), q),

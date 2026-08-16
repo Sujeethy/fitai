@@ -4,6 +4,7 @@ import { EmptyState } from '@/shared/components/EmptyState';
 import { AccountButton } from '@/shared/components/AccountButton';
 import { LogWeightCard } from '@/features/body-weight/components/LogWeightCard';
 import { WeightTrend } from '@/features/body-weight/components/WeightTrend';
+import { BodyWeightChart } from '@/features/body-weight/components/BodyWeightChart';
 import { useBodyWeights } from '@/data/useRepository';
 import { formatKg } from '@/shared/lib/format';
 
@@ -19,6 +20,7 @@ export default function WeightScreen() {
     >
       <LogWeightCard />
       <WeightTrend entries={entries} />
+      <BodyWeightChart entries={entries} />
 
       {entries.length === 0 && !weights.isPending ? (
         <EmptyState title="Nothing logged yet" hint="Save today's weight to start the trend." />

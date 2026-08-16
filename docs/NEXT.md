@@ -5,8 +5,9 @@ without re-deriving the reasoning. Ordered by value.
 
 **Where things stand:** Phases 0–1 complete — logging, swaps, body weight, history
 with undo, backup and restore, crash reporting, OTA updates, **routine-first model
-with 7-day cycle, Today checklist, and Routine tab with muscle breakdown**. 71 tests,
-CI green. See [PLAN.md](../PLAN.md) for the architecture.
+with 7-day cycle, Today checklist, and Routine tab with muscle breakdown**, a
+**semantic color token layer**, and **body-weight and per-exercise-1RM charts**.
+78 tests, CI green. See [PLAN.md](../PLAN.md) for the architecture.
 
 ---
 
@@ -118,14 +119,24 @@ this pass — it was not enabled during the work so far.
 
 ## 3. Charts
 
-`victory-native` is already the planned library (Skia-backed, smooth) but is not
-yet installed. Three charts earn their place:
+> **Body weight and per-exercise 1RM built.** `victory-native` (Skia-backed) is
+> installed, pinned to Expo SDK 57's compatibility table
+> (`@shopify/react-native-skia@2.6.2`; `react-native-gesture-handler` pinned to
+> the version `expo-router` already pulls in transitively, excluded from
+> `expo-doctor`'s version check the same way `@sentry/react-native` and
+> `@shopify/flash-list` are — see `apps/mobile/package.json`).
 
-| Chart | Why |
-|---|---|
-| **Body weight**, 7-day average line over raw dots | The trend is the signal; the dots show the noise it smooths |
-| **Per-exercise estimated 1RM** over time | The single best "am I progressing" view |
-| **Weekly volume per muscle group** | Catches an imbalance the log alone hides |
+| Chart | Status | Where |
+|---|---|---|
+| **Body weight**, 7-day average line over raw dots | Built | `BodyWeightChart`, Weight tab |
+| **Per-exercise estimated 1RM** over time | Built | `OneRepMaxChart`, Account → Progress (pick an exercise, see its trend) |
+| **Weekly volume per muscle group** | Already satisfied by the muscle volume **table** on the Routine tab (§1) — grouped by muscle, zero-filled per day. A bar-chart rendering of the same data is optional polish, not attempted yet. |
+
+`getExerciseHistory` (new repository method, `packages/core/src/repository/local/sets.ts`)
+returns every session an exercise appears in; `computeOneRepMaxTrend`
+(`packages/core/src/progress/oneRepMax.ts`, unit-tested) turns that into one
+estimated-1RM point per session using the Epley formula, picking whichever set
+in a session estimates highest — not necessarily the heaviest weight.
 
 Keep them readable at a glance: no legends where a label will do, no gridlines
 competing with the data.

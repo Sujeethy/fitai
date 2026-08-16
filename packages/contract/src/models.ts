@@ -88,6 +88,22 @@ export interface Performance {
   }[];
 }
 
+/**
+ * Every session an exercise appears in, most recent first — the raw material for a
+ * progression chart. `Performance` answers "what did I do last time"; this answers
+ * "how has it moved over time". Warmups are excluded, same reasoning as `Performance`.
+ */
+export interface ExerciseHistoryEntry {
+  readonly sessionId: string;
+  readonly date: string;
+  readonly sets: readonly {
+    readonly weightKg: number;
+    readonly reps: number;
+    readonly rpe: number | null;
+    readonly setType: SetType;
+  }[];
+}
+
 /** A session with everything needed to render it, in one read. */
 export interface SessionDetail extends Session {
   readonly exercises: readonly (SessionExercise & {

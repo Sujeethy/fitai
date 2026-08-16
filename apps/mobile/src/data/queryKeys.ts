@@ -30,6 +30,7 @@ export const queryKeys = {
     list: () => ['sessions', 'list'] as const,
     detail: (id: string) => ['sessions', 'detail', id] as const,
     lastPerformance: (exerciseId: string) => ['sessions', 'lastPerformance', exerciseId] as const,
+    history: (exerciseId: string) => ['sessions', 'history', exerciseId] as const,
   },
 
   bodyWeights: {

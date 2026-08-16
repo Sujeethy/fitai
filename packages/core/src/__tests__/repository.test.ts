@@ -203,6 +203,71 @@ describe('getLastPerformance — the "never show an empty form" read', () => {
   });
 });
 
+describe('getExerciseHistory — the progression-chart read', () => {
+  it('returns nothing when the exercise has never been done', async () => {
+    expect(expectOk(await h.repo.getExerciseHistory(h.id('deadlift')))).toEqual([]);
+  });
+
+  it('spans multiple sessions, most recent first', async () => {
+    const first = await startWith('bench-press');
+    expectOk(
+      await h.repo.logSet({
+        sessionExerciseId: first.se.id,
+        weightKg: 60,
+        reps: 8,
+        rpe: null,
+        setType: 'working',
+        completed: true,
+      }),
+    );
+
+    const second = await startWith('bench-press');
+    expectOk(
+      await h.repo.logSet({
+        sessionExerciseId: second.se.id,
+        weightKg: 65,
+        reps: 6,
+        rpe: null,
+        setType: 'working',
+        completed: true,
+      }),
+    );
+
+    const history = expectOk(await h.repo.getExerciseHistory(h.id('bench-press')));
+    expect(history).toHaveLength(2);
+    expect(history[0]?.sessionId).toBe(second.session.id);
+    expect(history[1]?.sessionId).toBe(first.session.id);
+  });
+
+  it('excludes warmups, same as getLastPerformance', async () => {
+    const { se } = await startWith('back-squat');
+    expectOk(
+      await h.repo.logSet({
+        sessionExerciseId: se.id,
+        weightKg: 20,
+        reps: 10,
+        rpe: null,
+        setType: 'warmup',
+        completed: true,
+      }),
+    );
+    expectOk(
+      await h.repo.logSet({
+        sessionExerciseId: se.id,
+        weightKg: 100,
+        reps: 5,
+        rpe: null,
+        setType: 'working',
+        completed: true,
+      }),
+    );
+
+    const [entry] = expectOk(await h.repo.getExerciseHistory(h.id('back-squat')));
+    expect(entry?.sets).toHaveLength(1);
+    expect(entry?.sets[0]?.weightKg).toBe(100);
+  });
+});
+
 describe('substitutions', () => {
   it('ranks seeded stand-ins for the leg press', async () => {
     const subs = expectOk(await h.repo.suggestSubstitutes(h.id('leg-press')));
@@ -529,5 +594,6 @@ describe('user scoping', () => {
     expect(journal.items).toHaveLength(0);
 
     expect(expectOk(await h.repo.getLastPerformance(h.id('bench-press')))).toBeNull();
+    expect(expectOk(await h.repo.getExerciseHistory(h.id('bench-press')))).toEqual([]);
   });
 });

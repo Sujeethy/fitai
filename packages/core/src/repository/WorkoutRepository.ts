@@ -2,6 +2,7 @@ import type {
   AddSessionExerciseInput,
   BodyWeight,
   Exercise,
+  ExerciseHistoryEntry,
   JournalEntry,
   LogBodyWeightInput,
   LogSetInput,
@@ -97,6 +98,16 @@ export interface WorkoutRepository {
    * rule, and is the most frequently called read in the app.
    */
   getLastPerformance(exerciseId: string): Promise<Result<Performance | null>>;
+
+  /**
+   * Every session this exercise appears in, most recent first — feeds the
+   * per-exercise progression chart (NEXT.md §3). Unlike `getLastPerformance`,
+   * which answers one session, this spans as many as `opts.limit` allows.
+   */
+  getExerciseHistory(
+    exerciseId: string,
+    opts?: { limit?: number },
+  ): Promise<Result<readonly ExerciseHistoryEntry[]>>;
 
   // -- Body weight ----------------------------------------------------------
 

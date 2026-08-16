@@ -9,3 +9,4 @@ export * from './seed/exercises';
 export * from './seed/routine';
 export * from './backup/retention';
 export * from './routine/muscleVolume';
+export * from './progress/oneRepMax';

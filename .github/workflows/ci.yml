@@ -44,10 +44,13 @@ jobs:
       # problems in a minute instead of twenty.
       #
       # apps/mobile/package.json's expo.install.exclude deliberately keeps
-      # @sentry/react-native and @shopify/flash-list off this check's version
-      # comparison — both are already pinned to their own latest release, ahead
-      # of what Expo SDK 57's bundled compatibility table currently lists. See
-      # CLAUDE.md, "Don't add dependencies casually".
+      # @sentry/react-native, @shopify/flash-list, and react-native-gesture-handler
+      # off this check's version comparison — all three are already pinned ahead
+      # of what Expo SDK 57's bundled compatibility table currently lists.
+      # gesture-handler 3.2.1 specifically is what expo-router 57.0.13 itself
+      # already pulls in transitively (its drawer layout requires it) — pinning
+      # it explicitly just makes an existing transitive resolution visible, not
+      # a new version choice. See CLAUDE.md, "Don't add dependencies casually".
       - name: Expo doctor
         working-directory: apps/mobile
         run: npx -y expo-doctor

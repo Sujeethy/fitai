@@ -12,6 +12,12 @@ export default function AccountScreen() {
   return (
     <Screen title="Account" subtitle="History, backups, and settings">
       <AccountRow
+        icon="chart-line"
+        label="Progress"
+        hint="Estimated 1RM over time, by exercise"
+        onPress={() => router.push('/account/progress')}
+      />
+      <AccountRow
         icon="history"
         label="History"
         hint="Every change, and how to undo it"

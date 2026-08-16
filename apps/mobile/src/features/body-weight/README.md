@@ -20,5 +20,7 @@ trustworthy one, and `source` records where each reading came from.
 ## Trend, not the daily number
 
 Daily body weight is noisy — food, water, and time of day move it more than fat
-does. The screen shows a 7-day average alongside the raw readings, because the
-average is the part that means anything.
+does. `WeightTrend` shows the 7-day average as a headline number, and
+`BodyWeightChart` plots it as a line over the raw readings (dots) — the trend
+is the signal, the dots are the noise it smooths (docs/NEXT.md §3). Needs at
+least two entries to draw; fewer than that and the chart doesn't render.
