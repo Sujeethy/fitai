@@ -6,4 +6,5 @@ export * from './repository/context';
 export * from './repository/types';
 export * from './repository/uuid';
 export * from './seed/exercises';
+export * from './seed/routine';
 export * from './backup/retention';

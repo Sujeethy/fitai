@@ -6,7 +6,7 @@ import { BackupCard } from '@/features/backup-restore/components/BackupCard';
 import { RestoreSheet } from '@/features/backup-restore/components/RestoreSheet';
 import { useAutomaticDailySnapshot, useSnapshots } from '@/features/backup-restore/hooks/useBackups';
 
-export default function SettingsScreen() {
+export default function BackupScreen() {
   const snapshots = useSnapshots();
   const [restoring, setRestoring] = useState(false);
 
@@ -16,7 +16,7 @@ export default function SettingsScreen() {
 
   return (
     <>
-      <Screen title="Settings" subtitle="Your data lives on this phone">
+      <Screen title="Backup & Restore" subtitle="Your data lives on this phone">
         <BackupCard />
 
         <View className="rounded-3xl border border-neutral-800/70 bg-neutral-900 p-4">

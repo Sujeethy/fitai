@@ -85,10 +85,13 @@ export const SEED_EXERCISES: readonly SeedExercise[] = [
   { slug: 'hack-squat-sled', name: 'Hack Squat Sled', primaryMuscle: 'quads', secondaryMuscles: ['glutes'], equipment: 'machine', aliases: ['sled hack squat'], incrementKg: 5 },
   { slug: 'hyperextension', name: 'Hyperextension', primaryMuscle: 'hamstrings', secondaryMuscles: ['glutes', 'back'], equipment: 'machine', aliases: ['back extension'], incrementKg: 1 },
   { slug: 'cable-woodchopper', name: 'Cable Woodchopper', primaryMuscle: 'core', secondaryMuscles: [], equipment: 'cable', aliases: ['woodchopper'], incrementKg: 2.5 },
-  { slug: 'wrist-curl', name: 'Wrist Curl', primaryMuscle: 'forearms', secondaryMuscles: [], equipment: 'dumbbell', aliases: [], incrementKg: 1 },
+  { slug: 'wrist-curl', name: 'Wrist Curl', primaryMuscle: 'forearms', secondaryMuscles: [], equipment: 'barbell', aliases: ['under-forearm wrist curl'], incrementKg: 2.5 },
   { slug: 'incline-dumbbell-curl', name: 'Incline Dumbbell Curl', primaryMuscle: 'biceps', secondaryMuscles: ['forearms'], equipment: 'dumbbell', aliases: [], incrementKg: 1 },
   { slug: 'single-arm-cable-lateral-raise', name: 'Single-Arm Cable Lateral Raise', primaryMuscle: 'side-delts', secondaryMuscles: [], equipment: 'cable', aliases: [], incrementKg: 1 },
   { slug: 'single-arm-cable-lateral-raise-behind', name: 'Single-Arm Cable Lateral Raise (Behind the Back)', primaryMuscle: 'side-delts', secondaryMuscles: ['rear-delts'], equipment: 'cable', aliases: ['behind the back lateral raise'], incrementKg: 1 },
+  { slug: 'machine-shoulder-press', name: 'Seated Machine Shoulder Press', primaryMuscle: 'front-delts', secondaryMuscles: ['triceps'], equipment: 'machine', aliases: [], incrementKg: 5 },
+  { slug: 'cable-hammer-curl', name: 'Cable Rope Hammer Curl', primaryMuscle: 'biceps', secondaryMuscles: ['forearms'], equipment: 'cable', aliases: [], incrementKg: 2.5 },
+  { slug: 'weighted-crunch', name: 'Weighted Crunch', primaryMuscle: 'core', secondaryMuscles: [], equipment: 'machine', aliases: ['weighted machine crunch'], incrementKg: 2.5 },
 ];
 
 /**

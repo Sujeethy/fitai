@@ -6,6 +6,7 @@ import { todayIso } from '@fitai/core';
 import { Screen } from '@/shared/components/Screen';
 import { Button } from '@/shared/components/Button';
 import { EmptyState } from '@/shared/components/EmptyState';
+import { AccountButton } from '@/shared/components/AccountButton';
 import { useSessions, useStartRoutineSession, useStartSession, useTodayPlan } from '@/data/useRepository';
 
 /**
@@ -39,7 +40,7 @@ export default function TodayScreen() {
     );
 
   return (
-    <Screen title="fitai" subtitle={date}>
+    <Screen title="fitai" subtitle={date} headerRight={<AccountButton />}>
       {active ? (
         <Animated.View entering={FadeInDown.springify().damping(18)} className="rounded-3xl border border-emerald-500/30 bg-emerald-500/10 p-4">
           <View className="flex-row items-center gap-2">
@@ -148,7 +149,7 @@ function RoutineDayCard({
     );
   }
 
-  const totalSets = plan.exercises.reduce((n, e) => n + e.sets.length, 0);
+  const totalSets = plan.day.exercises.reduce((n, e) => n + e.sets.length, 0);
 
   return (
     <Animated.View
@@ -157,7 +158,7 @@ function RoutineDayCard({
     >
       <Text className="text-base font-semibold text-emerald-400">{plan.day.name}</Text>
       <Text className="mt-1 text-sm text-neutral-400">
-        {plan.exercises.length} exercises · {totalSets} sets
+        {plan.day.exercises.length} exercises · {totalSets} sets
       </Text>
       {plan.day.warmupNote ? (
         <Text className="mt-2 text-xs text-neutral-500">{plan.day.warmupNote}</Text>

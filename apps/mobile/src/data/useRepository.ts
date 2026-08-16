@@ -53,6 +53,14 @@ export function useTodayPlan(date: string) {
   });
 }
 
+/** The whole active routine, every day expanded — what the Routine tab reads. */
+export function useActiveRoutine() {
+  return useQuery({
+    queryKey: queryKeys.routine.active(),
+    queryFn: () => unwrap(repository.getActiveRoutine()),
+  });
+}
+
 export function useStartRoutineSession() {
   const qc = useQueryClient();
   return useMutation({

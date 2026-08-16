@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { SEED_EXERCISES, SEED_SUBSTITUTES } from '../seed/exercises';
+import { SEED_ROUTINE } from '../seed/routine';
 import { randomUUID, todayIso } from '../repository/uuid';
 
 const slugs = new Set(SEED_EXERCISES.map((e) => e.slug));
@@ -34,6 +35,70 @@ describe('seed exercise library', () => {
     const legPress = SEED_SUBSTITUTES.filter(([from]) => from === 'leg-press');
     expect(legPress.length).toBeGreaterThan(0);
     expect(legPress.map(([, to]) => to)).toContain('hack-squat');
+  });
+});
+
+describe('seed routine', () => {
+  it('covers exactly one day per cycle position', () => {
+    expect(SEED_ROUTINE.days).toHaveLength(SEED_ROUTINE.cycleLength);
+    expect(SEED_ROUTINE.days.map((d) => d.dayIndex)).toEqual([0, 1, 2, 3, 4, 5, 6]);
+  });
+
+  it('rests on Wednesday and Sunday — dayIndex 2 and 6', () => {
+    const restDays = SEED_ROUTINE.days.filter((d) => d.isRestDay).map((d) => d.dayIndex);
+    expect(restDays).toEqual([2, 6]);
+  });
+
+  it('gives every training day at least one exercise, and every rest day none', () => {
+    for (const day of SEED_ROUTINE.days) {
+      if (day.isRestDay) expect(day.exercises).toHaveLength(0);
+      else expect(day.exercises.length).toBeGreaterThan(0);
+    }
+  });
+
+  it('only references known exercises', () => {
+    for (const day of SEED_ROUTINE.days) {
+      for (const ex of day.exercises) {
+        expect(slugs.has(ex.exerciseSlug), `unknown slug: ${ex.exerciseSlug} on ${day.name}`).toBe(true);
+      }
+    }
+  });
+
+  it('locks the volume at exactly 77 working sets', () => {
+    let workingSets = 0;
+    for (const day of SEED_ROUTINE.days) {
+      for (const ex of day.exercises) {
+        workingSets += ex.sets.filter((s) => s.setType === 'working').length;
+      }
+    }
+    expect(workingSets).toBe(77);
+  });
+
+  it('never leaves both a weight and a rep target null', () => {
+    for (const day of SEED_ROUTINE.days) {
+      for (const ex of day.exercises) {
+        for (const s of ex.sets) {
+          expect(s.targetWeightKg !== null || s.targetReps !== null).toBe(true);
+        }
+      }
+    }
+  });
+
+  it('never proposes a dual-cable movement as a single-stack substitute', () => {
+    // Every cable exercise in the routine is single-stack by construction — this
+    // guards against a future edit accidentally adding a two-handle cable move.
+    const cableSlugs = new Set(
+      SEED_EXERCISES.filter((e) => e.equipment === 'cable').map((e) => e.slug),
+    );
+    for (const day of SEED_ROUTINE.days) {
+      for (const ex of day.exercises) {
+        if (cableSlugs.has(ex.exerciseSlug)) {
+          expect(ex.note ?? '', `${ex.exerciseSlug} on ${day.name} has no single-stack note`).toMatch(
+            /single|one arm/i,
+          );
+        }
+      }
+    }
   });
 });
 

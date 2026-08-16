@@ -138,6 +138,14 @@ export interface RoutineSetPlan extends Entity {
   readonly restSeconds: number | null;
 }
 
+/** One day, fully expanded — its exercises, each with its planned sets. */
+export interface RoutineDayPlan extends RoutineDay {
+  readonly exercises: readonly (RoutineExercisePlan & {
+    readonly exercise: Exercise;
+    readonly sets: readonly RoutineSetPlan[];
+  })[];
+}
+
 /**
  * Today's plan, computed from the active routine's `anchorDate` and `cycleLength` —
  * everything the checklist needs in one read. `null` when there's no active
@@ -146,11 +154,17 @@ export interface RoutineSetPlan extends Entity {
 export interface TodayPlan {
   readonly routineId: string;
   readonly routineVersionId: string;
-  readonly day: RoutineDay;
-  readonly exercises: readonly (RoutineExercisePlan & {
-    readonly exercise: Exercise;
-    readonly sets: readonly RoutineSetPlan[];
-  })[];
+  readonly day: RoutineDayPlan;
+}
+
+/** The whole cycle, every day expanded — what the Routine tab reads. */
+export interface RoutineOverview {
+  readonly routineId: string;
+  readonly routineVersionId: string;
+  readonly name: string;
+  readonly cycleLength: number;
+  readonly anchorDate: string;
+  readonly days: readonly RoutineDayPlan[];
 }
 
 /**

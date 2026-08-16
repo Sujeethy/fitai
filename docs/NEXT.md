@@ -11,12 +11,16 @@ body weight, history with undo, backup and restore, crash reporting, OTA updates
 
 ## 1. Routines — the correction that matters most
 
-> **Built.** Schema, migration, repository (`getTodayPlan`, `startRoutineSession`),
-> and the Today checklist UI all exist — see
-> [docs/adr/0007](./adr/0007-routine-first-training-model.md). What's still open:
-> the routine's real content is not seeded (deliberately — see ADR 0007's
-> "Rejected"), and open question 2 below (missed-day behaviour) was decided as
-> "pinned to the calendar" but not revisited since.
+> **Built, and seeded with the real program.** Schema, migration, repository
+> (`getTodayPlan`, `getActiveRoutine`, `startRoutineSession`), the Today checklist,
+> and a read-only Routine tab all exist — see
+> [docs/adr/0007](./adr/0007-routine-first-training-model.md). `packages/core/src/seed/routine.ts`
+> holds the actual 7-day, 77-working-set program, seeded once on first app launch
+> the same way the exercise library is (`ensureSeedRoutine` in
+> `apps/mobile/src/data/migrate.ts`) — anchored to the Monday of the week the app
+> was first opened. Open question 1 below (in-app editing) is still open: for now,
+> changing the program means editing `seed/routine.ts` and reinstalling, since
+> `ensureSeedRoutine` only runs while the `routines` table is empty.
 
 **The problem:** the app currently makes you add every exercise, every session.
 For a fixed 7-day routine that is ~6 exercises × 7 days of data entry, forever.
@@ -199,16 +203,14 @@ Expo's pricing earlier.
 
 ## Open questions
 
-1. **Should the seeded routine be editable in-app**, or is editing it a
-   later phase? Seeding it read-only is much less work and probably enough at
-   first. Still open — no routine is seeded yet at all (see §1).
+1. **Should the seeded routine be editable in-app**, or is editing it a later
+   phase? Still open. The Routine tab (`src/features/routine-view/`) is read-only
+   for now — changing the program means editing `seed/routine.ts` directly and
+   reinstalling, since `ensureSeedRoutine` only runs once, while `routines` is
+   still empty. That's fine for a program that changes rarely; revisit if it
+   turns out to change often.
 2. **What happens on a missed day?** Decided for now: the cycle stays **pinned to
    the calendar** — `getTodayPlan` computes the day purely from `anchorDate` and
    today's date, so a skipped Tuesday does not push Wednesday to "Day 2". Simpler,
    and matches a fixed weekly split. Revisit if a drifting-on-miss programme is
    ever wanted (see ADR 0007's "Rejected").
-3. **What is the routine's actual content?** The real 7-day, ~30-exercise, 77-set
-   programme referenced above was not available data when the schema landed — it
-   needs to come from the user, then be inserted once with real numbers. Until
-   then Today has no active routine and the app behaves exactly as it did before
-   this section, via the ad-hoc fallback.

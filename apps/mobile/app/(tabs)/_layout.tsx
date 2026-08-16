@@ -8,9 +8,8 @@ import { Platform } from 'react-native';
  */
 const ICONS = {
   index: 'dumbbell',
+  routine: 'calendar-week',
   weight: 'scale-bathroom',
-  history: 'history',
-  settings: 'cog-outline',
 } as const;
 
 type TabName = keyof typeof ICONS;
@@ -35,7 +34,7 @@ export default function TabsLayout() {
         animation: 'shift',
       }}
     >
-      {(['index', 'weight', 'history', 'settings'] as TabName[]).map((name) => (
+      {(['index', 'routine', 'weight'] as TabName[]).map((name) => (
         <Tabs.Screen
           key={name}
           name={name}
@@ -57,7 +56,6 @@ export default function TabsLayout() {
 
 const TITLES: Record<TabName, string> = {
   index: 'Today',
+  routine: 'Routine',
   weight: 'Weight',
-  history: 'History',
-  settings: 'Settings',
 };

@@ -244,12 +244,15 @@ fitai/
 apps/mobile/
 │
 ├── app/                          ← SCREENS. One file = one screen.
-│   ├── (tabs)/
-│   │   ├── index.tsx             ← Today
-│   │   ├── history.tsx           ← Past workouts
+│   ├── (tabs)/                   ← the 3 daily-tap tabs
+│   │   ├── index.tsx             ← Today — routine checklist or ad hoc
+│   │   ├── routine.tsx           ← The full 7-day cycle, read-only
 │   │   ├── weight.tsx            ← Body weight
-│   │   ├── coach.tsx             ← LLM chat
-│   │   └── settings.tsx
+│   │   └── coach.tsx             ← LLM chat (Phase 6)
+│   ├── account/                  ← behind the account icon, not a tab —
+│   │   ├── index.tsx             ← looked up occasionally, not daily
+│   │   ├── history.tsx           ← Past changes, and undo
+│   │   └── backup.tsx            ← Backup & restore
 │   ├── session/[id].tsx          ← A single workout in progress
 │   └── _layout.tsx
 │
@@ -272,6 +275,7 @@ apps/mobile/
 │   │   │   └── types.ts
 │   │   │
 │   │   ├── body-weight/
+│   │   ├── routine-view/         ← the read-only 7-day cycle
 │   │   ├── session-planning/     ← repeat / ad hoc / generated
 │   │   ├── substitutions/        ← the swap flow
 │   │   ├── coach-chat/           ← single and multi-LLM

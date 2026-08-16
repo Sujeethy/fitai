@@ -2,7 +2,8 @@
 
 Past sessions, and reversing changes.
 
-**Screens:** `app/(tabs)/history.tsx`
+**Screens:** `app/account/history.tsx`, reached via the account icon on Today,
+Routine, or Weight — see `src/shared/components/AccountButton.tsx`
 **Tables:** `change_journal`, `sessions`
 
 ## Undo works in batches

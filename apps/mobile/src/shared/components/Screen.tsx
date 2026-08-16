@@ -8,9 +8,11 @@ interface Props {
   children: ReactNode;
   /** Pinned above the bottom edge — where a thumb naturally rests. */
   footer?: ReactNode;
+  /** Rendered beside the title, top-right — e.g. the account icon on a tab root. */
+  headerRight?: ReactNode;
 }
 
-export function Screen({ title, subtitle, children, footer }: Props) {
+export function Screen({ title, subtitle, children, footer, headerRight }: Props) {
   const insets = useSafeAreaInsets();
 
   return (
@@ -23,8 +25,13 @@ export function Screen({ title, subtitle, children, footer }: Props) {
         }}
         keyboardShouldPersistTaps="handled"
       >
-        <Text className="text-3xl font-bold text-white">{title}</Text>
-        {subtitle ? <Text className="mt-1 text-neutral-400">{subtitle}</Text> : null}
+        <View className="flex-row items-start justify-between gap-3">
+          <View className="flex-1">
+            <Text className="text-3xl font-bold text-white">{title}</Text>
+            {subtitle ? <Text className="mt-1 text-neutral-400">{subtitle}</Text> : null}
+          </View>
+          {headerRight ? <View className="pt-1">{headerRight}</View> : null}
+        </View>
         <View className="mt-6 gap-4">{children}</View>
       </ScrollView>
 

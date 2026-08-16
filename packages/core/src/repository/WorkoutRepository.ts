@@ -10,6 +10,7 @@ import type {
   Performance,
   ReplaceExerciseInput,
   Result,
+  RoutineOverview,
   Session,
   SessionDetail,
   SessionExercise,
@@ -60,6 +61,9 @@ export interface WorkoutRepository {
    * active routine — the caller falls back to ad-hoc mode, this is not an error.
    */
   getTodayPlan(date: string): Promise<Result<TodayPlan | null>>;
+
+  /** The whole cycle, every day expanded. `null` when there's no active routine. */
+  getActiveRoutine(): Promise<Result<RoutineOverview | null>>;
 
   /** Starts a session prefilled with a routine day's exercises and their targets. */
   startRoutineSession(input: StartRoutineSessionInput): Promise<Result<Session>>;

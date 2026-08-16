@@ -2,7 +2,8 @@
 
 Snapshots of the database, and getting them off the phone.
 
-**Screens:** `app/(tabs)/settings.tsx`
+**Screens:** `app/account/backup.tsx`, reached via the account icon on Today,
+Routine, or Weight — see `src/shared/components/AccountButton.tsx`
 **Files:** app document directory → `backups/`
 **Reads:** the whole database
 
@@ -50,7 +51,8 @@ This is the one place using `expo-file-system/legacy` — SAF has no equivalent 
 the modern `File`/`Directory` API as of SDK 57. Everything else uses the new one.
 
 The grant can be revoked (clearing app data, or changing permissions), and a
-backup that silently stopped working is worse than none — so the Settings screen
+backup that silently stopped working is worse than none — so the Backup & Restore
+screen
 checks the folder is still writable and warns if it isn't.
 
 Export is **best-effort**: if the folder is gone, the local snapshot still

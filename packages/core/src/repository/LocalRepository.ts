@@ -37,6 +37,7 @@ export function createLocalRepository(
 
     // -- Routines -------------------------------------------------------------
     getTodayPlan: (date) => ro.getTodayPlan(db, ctx(), date),
+    getActiveRoutine: () => ro.getActiveRoutine(db, ctx()),
     startRoutineSession: (input) => ro.startRoutineSession(db, ctx(), input),
 
     // -- Sessions -----------------------------------------------------------

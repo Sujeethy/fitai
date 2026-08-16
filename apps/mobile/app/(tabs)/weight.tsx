@@ -1,6 +1,7 @@
 import { Text, View } from 'react-native';
 import { Screen } from '@/shared/components/Screen';
 import { EmptyState } from '@/shared/components/EmptyState';
+import { AccountButton } from '@/shared/components/AccountButton';
 import { LogWeightCard } from '@/features/body-weight/components/LogWeightCard';
 import { WeightTrend } from '@/features/body-weight/components/WeightTrend';
 import { useBodyWeights } from '@/data/useRepository';
@@ -11,7 +12,11 @@ export default function WeightScreen() {
   const entries = weights.data?.items ?? [];
 
   return (
-    <Screen title="Body weight" subtitle="Trend matters more than any single day">
+    <Screen
+      title="Body weight"
+      subtitle="Trend matters more than any single day"
+      headerRight={<AccountButton />}
+    >
       <LogWeightCard />
       <WeightTrend entries={entries} />
 

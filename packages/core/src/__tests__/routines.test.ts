@@ -100,9 +100,9 @@ describe('getTodayPlan', () => {
     const plan = expectOk(await h.repo.getTodayPlan(ANCHOR));
     expect(plan?.day.name).toBe('Day 1 · Push');
     expect(plan?.day.isRestDay).toBe(false);
-    expect(plan?.exercises).toHaveLength(1);
-    expect(plan?.exercises[0]?.exercise.name).toBe('Barbell Bench Press');
-    expect(plan?.exercises[0]?.sets.map((s) => s.targetReps)).toEqual([12, 8]);
+    expect(plan?.day.exercises).toHaveLength(1);
+    expect(plan?.day.exercises[0]?.exercise.name).toBe('Barbell Bench Press');
+    expect(plan?.day.exercises[0]?.sets.map((s) => s.targetReps)).toEqual([12, 8]);
   });
 
   it('wraps the cycle — two days later is the training day again', async () => {
@@ -115,7 +115,7 @@ describe('getTodayPlan', () => {
     seedRoutine(h);
     const plan = expectOk(await h.repo.getTodayPlan('2026-08-11'));
     expect(plan?.day.isRestDay).toBe(true);
-    expect(plan?.exercises).toHaveLength(0);
+    expect(plan?.day.exercises).toHaveLength(0);
   });
 
   it('also resolves the day before the anchor, via the wrap', async () => {

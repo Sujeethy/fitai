@@ -4,7 +4,9 @@ import {
   ok,
   type Result,
   type RoutineDay,
+  type RoutineDayPlan,
   type RoutineExercisePlan,
+  type RoutineOverview,
   type RoutineSetPlan,
   type Session,
   type SetType,
@@ -105,40 +107,10 @@ export async function routineSetsByExerciseIds(
   return map;
 }
 
-/**
- * Today's plan, computed from the active routine's cycle. `null` covers three cases
- * the caller treats identically — no active routine, no anchor date yet, or the
- * computed day is missing a row — all of which mean "fall back to ad hoc".
- */
-export async function getTodayPlan(
-  db: FitaiDatabase,
-  ctx: RepoContext,
-  date: string,
-): Promise<Result<TodayPlan | null>> {
-  const [routine] = await db
-    .select()
-    .from(routines)
-    .where(and(eq(routines.userId, ctx.userId), eq(routines.isActive, true), isNull(routines.deletedAt)))
-    .limit(1);
+type RoutineRow = typeof routines.$inferSelect;
 
-  if (!routine || !routine.currentVersionId || !routine.anchorDate) return ok(null);
-
-  const dayIndex = cycleDayIndex(routine.anchorDate, date, routine.cycleLength);
-
-  const [day] = await db
-    .select()
-    .from(routineDays)
-    .where(
-      and(
-        eq(routineDays.routineVersionId, routine.currentVersionId),
-        eq(routineDays.dayIndex, dayIndex),
-        isNull(routineDays.deletedAt),
-      ),
-    )
-    .limit(1);
-
-  if (!day) return ok(null);
-
+/** Expand a day row into its exercises and their planned sets, in position order. */
+async function loadDayPlan(db: FitaiDatabase, day: RoutineDayRow): Promise<RoutineDayPlan> {
   const reRows = await db
     .select()
     .from(routineExercises)
@@ -159,11 +131,80 @@ export async function getTodayPlan(
     });
   }
 
+  return { ...toRoutineDay(day), exercises: exercisePlans };
+}
+
+async function findActiveRoutine(db: FitaiDatabase, ctx: RepoContext): Promise<RoutineRow | undefined> {
+  const [routine] = await db
+    .select()
+    .from(routines)
+    .where(and(eq(routines.userId, ctx.userId), eq(routines.isActive, true), isNull(routines.deletedAt)))
+    .limit(1);
+  return routine;
+}
+
+/**
+ * Today's plan, computed from the active routine's cycle. `null` covers three cases
+ * the caller treats identically — no active routine, no anchor date yet, or the
+ * computed day is missing a row — all of which mean "fall back to ad hoc".
+ */
+export async function getTodayPlan(
+  db: FitaiDatabase,
+  ctx: RepoContext,
+  date: string,
+): Promise<Result<TodayPlan | null>> {
+  const routine = await findActiveRoutine(db, ctx);
+  if (!routine || !routine.currentVersionId || !routine.anchorDate) return ok(null);
+
+  const dayIndex = cycleDayIndex(routine.anchorDate, date, routine.cycleLength);
+
+  const [day] = await db
+    .select()
+    .from(routineDays)
+    .where(
+      and(
+        eq(routineDays.routineVersionId, routine.currentVersionId),
+        eq(routineDays.dayIndex, dayIndex),
+        isNull(routineDays.deletedAt),
+      ),
+    )
+    .limit(1);
+
+  if (!day) return ok(null);
+
   return ok({
     routineId: routine.id,
     routineVersionId: routine.currentVersionId,
-    day: toRoutineDay(day),
-    exercises: exercisePlans,
+    day: await loadDayPlan(db, day),
+  });
+}
+
+/** The whole cycle, every day expanded — what the Routine tab reads. */
+export async function getActiveRoutine(
+  db: FitaiDatabase,
+  ctx: RepoContext,
+): Promise<Result<RoutineOverview | null>> {
+  const routine = await findActiveRoutine(db, ctx);
+  if (!routine || !routine.currentVersionId || !routine.anchorDate) return ok(null);
+
+  const dayRows = await db
+    .select()
+    .from(routineDays)
+    .where(and(eq(routineDays.routineVersionId, routine.currentVersionId), isNull(routineDays.deletedAt)))
+    .orderBy(asc(routineDays.dayIndex));
+
+  const days = [];
+  for (const day of dayRows) {
+    days.push(await loadDayPlan(db, day));
+  }
+
+  return ok({
+    routineId: routine.id,
+    routineVersionId: routine.currentVersionId,
+    name: routine.name,
+    cycleLength: routine.cycleLength,
+    anchorDate: routine.anchorDate,
+    days,
   });
 }
 

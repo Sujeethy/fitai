@@ -20,6 +20,11 @@ export const queryKeys = {
     plan: (date: string) => ['today', 'plan', date] as const,
   },
 
+  routine: {
+    all: ['routine'] as const,
+    active: () => ['routine', 'active'] as const,
+  },
+
   sessions: {
     all: ['sessions'] as const,
     list: () => ['sessions', 'list'] as const,
