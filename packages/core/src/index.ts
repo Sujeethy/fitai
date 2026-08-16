@@ -8,3 +8,4 @@ export * from './repository/uuid';
 export * from './seed/exercises';
 export * from './seed/routine';
 export * from './backup/retention';
+export * from './routine/muscleVolume';
