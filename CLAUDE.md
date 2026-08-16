@@ -139,6 +139,19 @@ typecheck.
   is wrong, say so and reference the ADR — don't silently do it differently.
 - **Don't add dependencies casually.** Every package ships inside the APK with full
   app permissions. Prefer the standard library or an existing dependency.
+- **Version policy: native packages follow the Expo SDK; everything else tracks
+  latest.** Anything with native/Android code (`expo-*`, `react-native` itself,
+  `react-native-reanimated`, `@sentry/react-native`, `@shopify/flash-list`, …) should
+  be whatever `npx expo install` resolves for the installed Expo SDK — that is the
+  combination Expo has actually tested, and a mismatch there is what causes an
+  on-device crash `expo-doctor` exists to catch before a build does. Pure-JS
+  dependencies (`drizzle-orm`, `@tanstack/react-query`, `zod`, `jotai`,
+  `tailwindcss`, …) aren't tied to native ABI compatibility, so default to latest.
+  If a native package's own latest genuinely outpaces what Expo's SDK currently
+  lists (it happens — Expo's compatibility table lags real releases), keep latest
+  and add it to `expo.install.exclude` in `apps/mobile/package.json` rather than
+  downgrading; note why next to the exclusion, the way `.github/workflows/ci.yml`
+  does for `@sentry/react-native` and `@shopify/flash-list`.
 - **Don't build ahead of the current phase.** PLAN.md §16 has the order, and it's
   deliberate. Phases 1–4 are the product; the rest is optional.
 - **When schema changes, update:** the schema file, a migration, the repository, the

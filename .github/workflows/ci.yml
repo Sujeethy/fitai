@@ -42,6 +42,12 @@ jobs:
       # EAS runs this during a build, which is a slow and expensive place to
       # first learn that a config is wrong. Running it here surfaces the same
       # problems in a minute instead of twenty.
+      #
+      # apps/mobile/package.json's expo.install.exclude deliberately keeps
+      # @sentry/react-native and @shopify/flash-list off this check's version
+      # comparison — both are already pinned to their own latest release, ahead
+      # of what Expo SDK 57's bundled compatibility table currently lists. See
+      # CLAUDE.md, "Don't add dependencies casually".
       - name: Expo doctor
         working-directory: apps/mobile
         run: npx -y expo-doctor
