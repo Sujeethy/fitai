@@ -4,8 +4,9 @@ An offline-first gym logger for workouts and body weight. A React Native app on 
 Android phone, with no backend, no running costs, and an LLM assistant that has your
 actual training history as context.
 
-**Status: Phase 0 complete.** The foundation is in place — schema, repository
-interface, contract, app shell, CI. Phase 1 adds actual logging.
+**Status: Phases 0–1 complete.** Logging, substitutions, body weight, history with
+undo, and backup/restore all work. **[docs/NEXT.md](./docs/NEXT.md)** has what comes
+next — routines, visual design, and charts.
 
 ```bash
 pnpm install

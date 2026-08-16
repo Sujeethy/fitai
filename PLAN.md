@@ -5,10 +5,19 @@ works with no signal, stores everything on your phone, and has an LLM assistant 
 your real training history as context — architected so a backend, login, and Play
 Store release can be added later without rewriting anything.
 
-Status: **planning**. Nothing is built yet. This document is the agreed direction.
+Status: **Phases 0–1 built and shipping.** This document is the agreed direction;
+**[docs/NEXT.md](./docs/NEXT.md) supersedes it wherever the two disagree.**
 
 > **Diagrams and folder structure:** [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md)
 > **Rules for contributors and LLMs:** [CLAUDE.md](./CLAUDE.md)
+> **What's next, and one correction:** [docs/NEXT.md](./docs/NEXT.md)
+
+> **Correction.** This plan assumed **no fixed training program**, so sessions are
+> built ad hoc. That was wrong: there is a fixed 7-day routine, varied only ~5–10%
+> when equipment is busy or time is short. The app therefore makes you add every
+> exercise every session, which is the wrong shape. The routine-first design that
+> replaces it is in **[docs/NEXT.md](./docs/NEXT.md) §1**; every "no fixed program"
+> statement below is superseded by it.
 
 ---
 
@@ -649,4 +658,4 @@ does, Phase 8 moves to the front.
 
 ---
 
-*Next step: Phase 0.*
+*Next step: [docs/NEXT.md](./docs/NEXT.md) — routines first.*

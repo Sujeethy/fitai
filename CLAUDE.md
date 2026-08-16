@@ -166,3 +166,15 @@ Ordered by how often they'd be "fixed" by mistake:
 | `.npmrc` sets `node-linker=hoisted` | Metro cannot follow pnpm's symlinked layout — `@expo/metro-runtime` and other peers fail to resolve. Standard for Expo in a pnpm monorepo. |
 | `metro.config.js` sets `disableHierarchicalLookup = true` | Stops Metro walking *above* the repo for modules. `expo-doctor` flags this and advises `false` — do not take that advice. There is an unrelated `node_modules` in the parent directory holding `react@18.2.0`; hierarchical lookup would let it shadow the real React 19. |
 | `app.config.ts` has no `newArchEnabled` flag | From SDK 57 the New Architecture is the only architecture, so the opt-in was removed from `ExpoConfig`. Adding it back is a type error. |
+
+---
+
+## Before starting new work
+
+Read **[docs/NEXT.md](./docs/NEXT.md)** first. It carries the agreed-but-unbuilt
+design, and one correction that PLAN.md predates:
+
+**The app is routine-first, not ad hoc.** PLAN.md was written assuming no fixed
+training program. There is one — a 7-day cycle, Monday = Day 1, rest on Wednesday
+and Sunday, varied only ~5–10% when equipment is busy. Anywhere PLAN.md or
+`docs/adr/0004` says "no fixed program", docs/NEXT.md supersedes it.
