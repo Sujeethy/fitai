@@ -37,12 +37,17 @@ export interface SeedRoutineDay {
 
 export interface SeedRoutine {
   readonly name: string;
+  /** Bump whenever the days/exercises/sets below change — the app compares this
+   *  against what's already on the device and re-seeds a new routine_version
+   *  when they differ. See `ensureSeedRoutine` in apps/mobile/src/data/migrate.ts. */
+  readonly version: number;
   readonly cycleLength: number;
   readonly days: readonly SeedRoutineDay[];
 }
 
 export const SEED_ROUTINE: SeedRoutine = {
   name: '7-Day Balanced Push/Pull/Legs Split',
+  version: 2,
   cycleLength: 7,
   days: [
     {

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { eq } from 'drizzle-orm';
 import { migrate } from 'drizzle-orm/expo-sqlite/migrator';
 import { LOCAL_USER_ID, SEED_EXERCISES, SEED_ROUTINE, nowIso, randomUUID } from '@fitai/core';
 import { schema } from '@fitai/core';
@@ -69,14 +70,26 @@ async function ensureLocalUser(): Promise<void> {
   });
 }
 
-/** Seed the exercise library once. Your own additions are never overwritten. */
+/**
+ * Seed the exercise library, topping up any entries added to `SEED_EXERCISES`
+ * since this device's last launch. Matched by name, so your own custom
+ * exercises (`isCustom`) are never touched, and an already-seeded one is never
+ * re-inserted or overwritten — only what's missing gets added.
+ *
+ * This runs every launch, not once: a one-time "only if the table is empty"
+ * check is what silently dropped exercises the routine needed on an install
+ * that predated them. See docs/adr/0007's amendment on this.
+ */
 async function ensureSeedExercises(): Promise<void> {
-  const existing = await db.select().from(schema.exercises).limit(1);
-  if (existing.length > 0) return;
+  const existingNames = new Set(
+    (await db.select({ name: schema.exercises.name }).from(schema.exercises)).map((r) => r.name),
+  );
+  const missing = SEED_EXERCISES.filter((e) => !existingNames.has(e.name));
+  if (missing.length === 0) return;
 
   const now = nowIso();
   await db.insert(schema.exercises).values(
-    SEED_EXERCISES.map((e) => ({
+    missing.map((e) => ({
       id: randomUUID(),
       userId: LOCAL_USER_ID,
       createdAt: now,
@@ -102,15 +115,16 @@ function mostRecentMondayIso(): string {
   return local.toISOString().slice(0, 10);
 }
 
-/**
- * Seed the routine once, and activate it. Never overwrites a routine you've since
- * edited — this only runs when the `routines` table is still empty. See
- * docs/NEXT.md §1 and docs/adr/0007-routine-first-training-model.md.
- */
-async function ensureSeedRoutine(): Promise<void> {
-  const existing = await db.select().from(schema.routines).limit(1);
-  if (existing.length > 0) return;
+/** The change-note tag a seeded version carries, so a later launch can tell whether
+ *  the on-device content still matches `SEED_ROUTINE`. */
+const seedTag = (version: number): string => `seed:${version}`;
 
+/**
+ * Inserts one full routine_version — days, exercises, sets — for `SEED_ROUTINE`'s
+ * current content. Requires `ensureSeedExercises` to have already run, so every
+ * `exerciseSlug` it references resolves to a real row.
+ */
+async function insertSeedVersionContent(versionId: string): Promise<void> {
   const exerciseRows = await db.select().from(schema.exercises);
   const idByName = new Map(exerciseRows.map((e) => [e.name, e.id]));
   const idBySlug = new Map(
@@ -121,33 +135,6 @@ async function ensureSeedRoutine(): Promise<void> {
   );
 
   const now = nowIso();
-  const routineId = randomUUID();
-  const versionId = randomUUID();
-
-  await db.insert(schema.routines).values({
-    id: routineId,
-    userId: LOCAL_USER_ID,
-    createdAt: now,
-    updatedAt: now,
-    deletedAt: null,
-    name: SEED_ROUTINE.name,
-    currentVersionId: versionId,
-    cycleLength: SEED_ROUTINE.cycleLength,
-    anchorDate: mostRecentMondayIso(),
-    isActive: true,
-    archivedAt: null,
-  });
-
-  await db.insert(schema.routineVersions).values({
-    id: versionId,
-    userId: LOCAL_USER_ID,
-    createdAt: now,
-    updatedAt: now,
-    deletedAt: null,
-    routineId,
-    versionNumber: 1,
-    changeNote: 'Initial seed',
-  });
 
   const dayRows = SEED_ROUTINE.days.map((day) => ({
     id: randomUUID(),
@@ -212,4 +199,81 @@ async function ensureSeedRoutine(): Promise<void> {
   if (setRowsToInsert.length > 0) {
     await db.insert(schema.routineSets).values(setRowsToInsert);
   }
+}
+
+/**
+ * Seed the routine, and keep it in step with `SEED_ROUTINE` as its content changes.
+ *
+ * A fresh install gets the full routine on first launch. An install that already
+ * has one gets a **new routine_version** — never a mutation of the old one — when
+ * the on-device version's tag no longer matches `SEED_ROUTINE.version`. That keeps
+ * ADR 0004's guarantee: a session already logged against the old version keeps
+ * pointing at it, so its plan of record and planned-set targets don't change
+ * retroactively. `routines.currentVersionId` moves to the new version, so Today and
+ * the Routine tab read the corrected content from the next query onward.
+ *
+ * See docs/NEXT.md §1 and docs/adr/0007-routine-first-training-model.md.
+ */
+async function ensureSeedRoutine(): Promise<void> {
+  const [existingRoutine] = await db.select().from(schema.routines).limit(1);
+  const now = nowIso();
+
+  if (!existingRoutine) {
+    const routineId = randomUUID();
+    const versionId = randomUUID();
+
+    await db.insert(schema.routines).values({
+      id: routineId,
+      userId: LOCAL_USER_ID,
+      createdAt: now,
+      updatedAt: now,
+      deletedAt: null,
+      name: SEED_ROUTINE.name,
+      currentVersionId: versionId,
+      cycleLength: SEED_ROUTINE.cycleLength,
+      anchorDate: mostRecentMondayIso(),
+      isActive: true,
+      archivedAt: null,
+    });
+    await db.insert(schema.routineVersions).values({
+      id: versionId,
+      userId: LOCAL_USER_ID,
+      createdAt: now,
+      updatedAt: now,
+      deletedAt: null,
+      routineId,
+      versionNumber: 1,
+      changeNote: seedTag(SEED_ROUTINE.version),
+    });
+    await insertSeedVersionContent(versionId);
+    return;
+  }
+
+  const existingVersions = await db
+    .select()
+    .from(schema.routineVersions)
+    .where(eq(schema.routineVersions.routineId, existingRoutine.id));
+
+  const currentVersion = existingVersions.find((v) => v.id === existingRoutine.currentVersionId);
+  if (currentVersion?.changeNote === seedTag(SEED_ROUTINE.version)) return; // already up to date
+
+  const nextVersionNumber = existingVersions.reduce((max, v) => Math.max(max, v.versionNumber), 0) + 1;
+  const versionId = randomUUID();
+
+  await db.insert(schema.routineVersions).values({
+    id: versionId,
+    userId: LOCAL_USER_ID,
+    createdAt: now,
+    updatedAt: now,
+    deletedAt: null,
+    routineId: existingRoutine.id,
+    versionNumber: nextVersionNumber,
+    changeNote: seedTag(SEED_ROUTINE.version),
+  });
+  await insertSeedVersionContent(versionId);
+
+  await db
+    .update(schema.routines)
+    .set({ currentVersionId: versionId, cycleLength: SEED_ROUTINE.cycleLength, updatedAt: now })
+    .where(eq(schema.routines.id, existingRoutine.id));
 }
