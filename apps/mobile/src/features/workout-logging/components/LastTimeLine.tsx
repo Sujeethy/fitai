@@ -1,5 +1,6 @@
 import { Text } from 'react-native';
 import type { Performance } from '@fitai/contract';
+import { formatKg } from '@/shared/lib/format';
 
 /**
  * A one-line reminder of what you did last time, so you can see whether today is
@@ -22,7 +23,7 @@ function summarise(p: Performance): string {
   const weights = new Set(p.sets.map((s) => s.weightKg));
   if (weights.size === 1) {
     const w = p.sets[0]?.weightKg ?? 0;
-    return `${w} kg × ${p.sets.map((s) => s.reps).join(', ')}`;
+    return `${formatKg(w)} kg × ${p.sets.map((s) => s.reps).join(', ')}`;
   }
-  return p.sets.map((s) => `${s.weightKg}×${s.reps}`).join(', ');
+  return p.sets.map((s) => `${formatKg(s.weightKg)}×${s.reps}`).join(', ');
 }

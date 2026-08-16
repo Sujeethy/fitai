@@ -4,6 +4,7 @@ import { EmptyState } from '@/shared/components/EmptyState';
 import { LogWeightCard } from '@/features/body-weight/components/LogWeightCard';
 import { WeightTrend } from '@/features/body-weight/components/WeightTrend';
 import { useBodyWeights } from '@/data/useRepository';
+import { formatKg } from '@/shared/lib/format';
 
 export default function WeightScreen() {
   const weights = useBodyWeights();
@@ -19,7 +20,7 @@ export default function WeightScreen() {
       ) : null}
 
       {entries.length > 0 ? (
-        <View className="rounded-2xl bg-neutral-900 p-4">
+        <View className="rounded-3xl border border-neutral-800/70 bg-neutral-900 p-4">
           <Text className="mb-2 text-xs uppercase tracking-wide text-neutral-500">History</Text>
           {entries.slice(0, 30).map((w) => (
             <View
@@ -31,7 +32,7 @@ export default function WeightScreen() {
                 {w.source !== 'manual' ? (
                   <Text className="text-xs text-neutral-600">{w.source.replace('_', ' ')}</Text>
                 ) : null}
-                <Text className="font-medium text-white">{w.weightKg.toFixed(1)} kg</Text>
+                <Text className="font-medium text-white">{formatKg(w.weightKg)} kg</Text>
               </View>
             </View>
           ))}

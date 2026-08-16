@@ -27,7 +27,7 @@ export function BackupCard() {
     : null;
 
   return (
-    <View className="rounded-2xl bg-neutral-900 p-4">
+    <View className="rounded-3xl border border-neutral-800/70 bg-neutral-900 p-4">
       <Text className="text-base font-semibold text-white">Backup</Text>
 
       <Text className="mt-1 text-sm text-neutral-500">
@@ -66,6 +66,7 @@ export function BackupCard() {
       <View className="mt-4 gap-2">
         <Button
           label={backupNow.isPending ? 'Backing up…' : 'Back up now'}
+          icon="cloud-upload-outline"
           variant="primary"
           block
           disabled={backupNow.isPending}
@@ -73,6 +74,7 @@ export function BackupCard() {
         />
         <Button
           label={hasFolder ? 'Change backup folder' : 'Choose backup folder'}
+          icon="folder-outline"
           onPress={() => chooseFolder.mutate()}
           hint={hasFolder ? undefined : 'Pick a Drive-synced folder'}
         />

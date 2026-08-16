@@ -1,4 +1,6 @@
 import { Text, View } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { todayIso } from '@fitai/core';
 import { Screen } from '@/shared/components/Screen';
@@ -28,22 +30,27 @@ export default function TodayScreen() {
   return (
     <Screen title="fitai" subtitle={todayIso()}>
       {active ? (
-        <View className="rounded-2xl bg-emerald-500/10 p-4">
-          <Text className="text-base font-semibold text-emerald-400">Session in progress</Text>
+        <Animated.View entering={FadeInDown.springify().damping(18)} className="rounded-3xl border border-emerald-500/30 bg-emerald-500/10 p-4">
+          <View className="flex-row items-center gap-2">
+            <MaterialCommunityIcons name="progress-clock" size={18} color="#34d399" />
+            <Text className="text-base font-semibold text-emerald-400">Session in progress</Text>
+          </View>
           <Text className="mt-1 text-sm text-neutral-400">Started {active.startedAt.slice(11, 16)}</Text>
           <View className="mt-4">
             <Button
               label="Continue session"
+              icon="arrow-right-bold"
               variant="primary"
               block
               onPress={() => router.push({ pathname: '/session/[id]', params: { id: active.id } })}
             />
           </View>
-        </View>
+        </Animated.View>
       ) : (
         <View className="gap-3">
           <Button
             label="Start a workout"
+            icon="plus-circle-outline"
             variant="primary"
             block
             disabled={start.isPending}
@@ -68,7 +75,7 @@ export default function TodayScreen() {
       ) : null}
 
       {all.length > 0 ? (
-        <View className="rounded-2xl bg-neutral-900 p-4">
+        <View className="rounded-3xl border border-neutral-800/70 bg-neutral-900 p-4">
           <Text className="mb-2 text-xs uppercase tracking-wide text-neutral-500">Recent</Text>
           {all.slice(0, 6).map((s) => (
             <View

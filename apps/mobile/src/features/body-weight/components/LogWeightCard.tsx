@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Text, View } from 'react-native';
+import Animated, { FadeIn } from 'react-native-reanimated';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { formatKg } from '@/shared/lib/format';
 import { todayIso } from '@fitai/core';
 import { Button } from '@/shared/components/Button';
 import { Stepper } from '@/shared/components/Stepper';
@@ -30,11 +33,14 @@ export function LogWeightCard() {
   const current = value ?? latest?.weightKg ?? 75;
 
   return (
-    <View className="rounded-2xl bg-neutral-900 p-4">
+    <Animated.View entering={FadeIn.duration(220)} className="rounded-3xl border border-neutral-800/70 bg-neutral-900 p-4">
       <View className="flex-row items-center justify-between">
-        <Text className="text-base font-semibold text-white">
-          {alreadyToday ? "Update today's weight" : "Log today's weight"}
-        </Text>
+        <View className="flex-row items-center gap-2">
+          <MaterialCommunityIcons name="scale-bathroom" size={18} color="#34d399" />
+          <Text className="text-base font-semibold text-white">
+            {alreadyToday ? "Update today's weight" : "Log today's weight"}
+          </Text>
+        </View>
         <Text className="text-xs text-neutral-500">{today}</Text>
       </View>
 
@@ -42,7 +48,7 @@ export function LogWeightCard() {
         <Stepper
           label="Body weight"
           value={current}
-          step={0.1}
+          step={0.05}
           min={20}
           max={400}
           suffix=" kg"
@@ -52,14 +58,15 @@ export function LogWeightCard() {
 
       <View className="mt-4">
         <Button
-          label={log.isPending ? 'Saving…' : `Save ${current.toFixed(1)} kg`}
+          label={log.isPending ? 'Saving…' : `Save ${formatKg(current)} kg`}
+          icon="content-save-outline"
           variant="primary"
           block
           disabled={log.isPending}
           onPress={() =>
             log.mutate({
               date: today,
-              weightKg: Number(current.toFixed(1)),
+              weightKg: Number(formatKg(current)),
               source: 'manual',
               notes: null,
             })
@@ -68,6 +75,6 @@ export function LogWeightCard() {
       </View>
 
       {log.error ? <Text className="mt-2 text-sm text-red-400">{log.error.message}</Text> : null}
-    </View>
+    </Animated.View>
   );
 }

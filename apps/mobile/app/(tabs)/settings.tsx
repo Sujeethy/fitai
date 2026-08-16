@@ -19,7 +19,7 @@ export default function SettingsScreen() {
       <Screen title="Settings" subtitle="Your data lives on this phone">
         <BackupCard />
 
-        <View className="rounded-2xl bg-neutral-900 p-4">
+        <View className="rounded-3xl border border-neutral-800/70 bg-neutral-900 p-4">
           <Text className="text-base font-semibold text-white">Restore</Text>
           <Text className="mt-1 text-sm text-neutral-500">
             Go back to an earlier backup. You'll see what's in it before anything changes.
@@ -27,6 +27,7 @@ export default function SettingsScreen() {
           <View className="mt-4">
             <Button
               label="Restore from a backup"
+              icon="backup-restore"
               block
               disabled={(snapshots.data?.length ?? 0) === 0}
               onPress={() => setRestoring(true)}
@@ -34,7 +35,7 @@ export default function SettingsScreen() {
           </View>
         </View>
 
-        <View className="rounded-2xl bg-neutral-900 p-4">
+        <View className="rounded-3xl border border-neutral-800/70 bg-neutral-900 p-4">
           <Text className="text-base font-semibold text-white">How backups work</Text>
           <Text className="mt-2 text-sm leading-5 text-neutral-400">
             A backup is taken after every session and once a day. The last 7 days plus

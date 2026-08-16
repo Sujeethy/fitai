@@ -1,5 +1,6 @@
 import { Text, View } from 'react-native';
 import type { BodyWeight } from '@fitai/contract';
+import { formatKg } from '@/shared/lib/format';
 
 /**
  * Daily body weight is noise — food, water and time of day move it far more than
@@ -14,10 +15,10 @@ export function WeightTrend({ entries }: { entries: readonly BodyWeight[] }) {
   const delta = previous === null ? null : recent - previous;
 
   return (
-    <View className="rounded-2xl bg-neutral-900 p-4">
+    <View className="rounded-3xl border border-neutral-800/70 bg-neutral-900 p-4">
       <Text className="text-xs uppercase tracking-wide text-neutral-500">7-day average</Text>
       <View className="mt-1 flex-row items-baseline gap-3">
-        <Text className="text-3xl font-bold text-white">{recent.toFixed(1)} kg</Text>
+        <Text className="text-3xl font-bold text-white">{formatKg(recent)} kg</Text>
         {delta !== null ? (
           <Text
             className={
@@ -28,8 +29,8 @@ export function WeightTrend({ entries }: { entries: readonly BodyWeight[] }) {
                   : 'text-sm text-amber-400'
             }
           >
-            {delta > 0 ? '+' : ''}
-            {delta.toFixed(1)} kg vs previous week
+            {delta > 0 ? '+' : '−'}
+            {formatKg(Math.abs(delta))} kg vs previous week
           </Text>
         ) : (
           <Text className="text-sm text-neutral-600">need 2 weeks for a trend</Text>

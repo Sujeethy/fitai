@@ -1,4 +1,6 @@
 import { Text, View } from 'react-native';
+import Animated, { FadeInUp, LinearTransition } from 'react-native-reanimated';
+import { formatKg } from '@/shared/lib/format';
 import type { Exercise, SessionDetail, WorkoutSet } from '@fitai/contract';
 import { Button } from '@/shared/components/Button';
 import { Stepper } from '@/shared/components/Stepper';
@@ -63,7 +65,11 @@ export function ExerciseCard({ sessionId, item, onSwap }: Props) {
   };
 
   return (
-    <View className="rounded-2xl bg-neutral-900 p-4">
+    <Animated.View
+      entering={FadeInUp.springify().damping(18)}
+      layout={LinearTransition.springify().damping(20)}
+      className="rounded-3xl border border-neutral-800/70 bg-neutral-900 p-4"
+    >
       <View className="flex-row items-start justify-between gap-3">
         <View className="flex-1">
           <Text className="text-lg font-semibold text-white">{item.exercise.name}</Text>
@@ -76,6 +82,7 @@ export function ExerciseCard({ sessionId, item, onSwap }: Props) {
         </View>
         <Button
           label="Swap"
+          icon="swap-horizontal"
           variant="ghost"
           onPress={() => onSwap(item.plannedExercise ?? item.exercise)}
         />
@@ -106,13 +113,15 @@ export function ExerciseCard({ sessionId, item, onSwap }: Props) {
           value={prefill.value.reps}
           step={1}
           max={100}
+          decimals={0}
           onChange={(reps) => prefill.setValue({ ...prefill.value, reps })}
         />
       </View>
 
       <View className="mt-4 gap-2">
         <Button
-          label={`Log ${prefill.value.weightKg} kg × ${prefill.value.reps}`}
+          label={`Log ${formatKg(prefill.value.weightKg)} kg × ${prefill.value.reps}`}
+          icon="check-bold"
           variant="primary"
           block
           disabled={logSet.isPending}
@@ -121,11 +130,11 @@ export function ExerciseCard({ sessionId, item, onSwap }: Props) {
         <View className="flex-row gap-2">
           {item.sets.length > 0 ? (
             <View className="flex-1">
-              <Button label="Repeat last set" onPress={repeatLast} disabled={logSet.isPending} />
+              <Button label="Repeat set" icon="repeat" onPress={repeatLast} disabled={logSet.isPending} />
             </View>
           ) : null}
           <View className="flex-1">
-            <Button label="Log as warmup" variant="ghost" onPress={() => log('warmup')} />
+            <Button label="Warmup" icon="fire" variant="ghost" onPress={() => log('warmup')} />
           </View>
         </View>
       </View>
@@ -133,7 +142,7 @@ export function ExerciseCard({ sessionId, item, onSwap }: Props) {
       {logSet.error ? (
         <Text className="mt-2 text-sm text-red-400">{logSet.error.message}</Text>
       ) : null}
-    </View>
+    </Animated.View>
   );
 }
 

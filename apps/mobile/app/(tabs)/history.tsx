@@ -1,4 +1,6 @@
 import { Text, View } from 'react-native';
+import Animated, { FadeInDown, LinearTransition } from 'react-native-reanimated';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import type { JournalEntry } from '@fitai/contract';
 import { Screen } from '@/shared/components/Screen';
 import { Button } from '@/shared/components/Button';
@@ -27,8 +29,20 @@ export default function HistoryScreen() {
       ) : null}
 
       {batches.map((b) => (
-        <View key={b.batchId} className="rounded-2xl bg-neutral-900 p-4">
+        <Animated.View
+          key={b.batchId}
+          entering={FadeInDown.springify().damping(18)}
+          layout={LinearTransition.springify().damping(20)}
+          className="rounded-3xl border border-neutral-800/70 bg-neutral-900 p-4"
+        >
           <View className="flex-row items-start justify-between gap-3">
+            <View className="mt-0.5">
+              <MaterialCommunityIcons
+                name={b.actor === 'llm' ? 'robot-outline' : 'gesture-tap'}
+                size={18}
+                color={b.actor === 'llm' ? '#a78bfa' : '#6b6b70'}
+              />
+            </View>
             <View className="flex-1">
               <Text className="text-white">{describeBatch(b)}</Text>
               <Text className="mt-0.5 text-xs text-neutral-500">
@@ -40,10 +54,11 @@ export default function HistoryScreen() {
               label="Undo"
               variant="danger"
               disabled={undo.isPending}
+              icon="undo-variant"
               onPress={() => undo.mutate(b.batchId)}
             />
           </View>
-        </View>
+        </Animated.View>
       ))}
 
       {undo.error ? <Text className="text-sm text-red-400">{undo.error.message}</Text> : null}
