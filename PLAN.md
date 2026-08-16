@@ -110,6 +110,7 @@ definitions instead of duplicating them.
 | Concern | Pick | Why |
 |---|---|---|
 | Framework | **Expo + Expo Router** | File-based routing, typed routes, managed native modules |
+| Optimization | **React Compiler** | Automatic build-time memoization; eliminates manual `useMemo`/`useCallback` |
 | Styling | **NativeWind v4** | Tailwind syntax in React Native — closest to the web workflow you know |
 | **Server/async state** | **TanStack Query (React Query)** | Caching, invalidation, optimistic updates, retries. Wraps the repository, so it works identically over local SQLite now and over HTTP later. |
 | **Client/UI state** | **Jotai** | Atoms for the active session draft, rest timer, selected providers, chat columns |

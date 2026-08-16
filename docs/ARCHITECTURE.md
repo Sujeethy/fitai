@@ -91,6 +91,9 @@ lives. Swap SQLite for a server and layers 1–3 don't notice.
 | Anything stored in the database | **React Query** | Past sessions, sets, body weights, routines |
 | Anything not stored | **Jotai** | Rest timer countdown, which sheet is open, draft values, selected LLM providers |
 
+### Compiler & Rendering
+- **React Compiler:** Enabled in `babel.config.js` via `babel-preset-expo` (`reactCompiler: true`). Component trees, callbacks, and derived values are auto-memoized at build time, eliminating manual `useMemo`/`useCallback` boilerplate.
+
 ---
 
 ## 3. Logging a set — the most common action

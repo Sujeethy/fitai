@@ -1,11 +1,18 @@
 module.exports = function (api) {
   api.cache(true);
   return {
-    // babel-preset-expo wires up Expo Router and, from SDK 50, adds the
-    // Reanimated plugin automatically once Reanimated is installed. Do not add
-    // that plugin by hand — doing so double-applies it and, on some versions,
-    // fails to resolve.
-    presets: [['babel-preset-expo', { jsxImportSource: 'nativewind' }], 'nativewind/babel'],
+    // babel-preset-expo wires up Expo Router, Reanimated, and React Compiler.
+    // React Compiler automatically memoizes components and hooks at build time.
+    presets: [
+      [
+        'babel-preset-expo',
+        {
+          jsxImportSource: 'nativewind',
+          reactCompiler: true,
+        },
+      ],
+      'nativewind/babel',
+    ],
 
     // Inlines `.sql` files as strings at build time, so the generated Drizzle
     // migrations can be `import`ed. Pairs with `sourceExts.push('sql')` in

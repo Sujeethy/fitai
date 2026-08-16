@@ -96,6 +96,7 @@ Do **not** introduce Drizzle's `useLiveQuery` as a second read path. See
   and renders is three things wearing one hat.
 - **Named exports only.** No default exports — renames stay greppable.
 - **Absolute imports** via `@/`. Never `../../../`.
+- **React Compiler is enabled** (`babel-preset-expo` with `reactCompiler: true`). Components, hooks, and calculations are memoized automatically at build time. Do **not** write manual `useMemo`, `useCallback`, or `React.memo` unless required by external boundary constraints. Keep components pure and compliant with the Rules of React.
 - **One file per LLM tool, one per provider, one per database table.**
 - **No `any`.** If a type is genuinely unknown, use `unknown` and narrow it.
 
