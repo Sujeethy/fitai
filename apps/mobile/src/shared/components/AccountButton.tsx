@@ -1,6 +1,7 @@
 import { Pressable } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { colors } from '@/shared/theme/colors';
 
 /**
  * The way into History, Backup & Restore, and Settings — things you look up
@@ -15,9 +16,9 @@ export function AccountButton() {
       accessibilityLabel="Account"
       onPress={() => router.push('/account')}
       hitSlop={12}
-      className="h-10 w-10 items-center justify-center rounded-full border border-neutral-800 bg-neutral-900"
+      className="h-10 w-10 items-center justify-center rounded-full border border-border bg-surfaceRaised"
     >
-      <MaterialCommunityIcons name="account-outline" size={20} color="#d4d4d4" />
+      <MaterialCommunityIcons name="account-outline" size={20} color={colors.textSecondary} />
     </Pressable>
   );
 }

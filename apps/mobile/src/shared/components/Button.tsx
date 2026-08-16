@@ -2,16 +2,17 @@ import { Pressable, Text, View, type PressableProps } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { colors } from '@/shared/theme/colors';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
 
 const VARIANTS: Record<Variant, { box: string; label: string; icon: string }> = {
-  primary: { box: 'bg-emerald-500', label: 'text-neutral-950', icon: '#0a0a0a' },
-  secondary: { box: 'bg-neutral-800 border border-neutral-700/60', label: 'text-white', icon: '#fff' },
-  ghost: { box: 'bg-transparent', label: 'text-neutral-300', icon: '#d4d4d4' },
-  danger: { box: 'bg-transparent', label: 'text-red-400', icon: '#f87171' },
+  primary: { box: 'bg-accent', label: 'text-textInverse', icon: colors.textInverse },
+  secondary: { box: 'bg-surfaceOverlay border border-borderStrong/60', label: 'text-textPrimary', icon: colors.textPrimary },
+  ghost: { box: 'bg-transparent', label: 'text-textSecondary', icon: colors.textSecondary },
+  danger: { box: 'bg-transparent', label: 'text-danger', icon: colors.danger },
 };
 
 interface Props extends Omit<PressableProps, 'children' | 'style'> {
@@ -62,7 +63,7 @@ export function Button({ label, variant = 'secondary', block, hint, icon, ...res
         {icon ? <MaterialCommunityIcons name={icon} size={18} color={v.icon} /> : null}
         <View className="items-center">
           <Text className={`text-base font-semibold ${v.label}`}>{label}</Text>
-          {hint ? <Text className="mt-0.5 text-xs text-neutral-500">{hint}</Text> : null}
+          {hint ? <Text className="mt-0.5 text-xs text-textMuted">{hint}</Text> : null}
         </View>
       </View>
     </AnimatedPressable>

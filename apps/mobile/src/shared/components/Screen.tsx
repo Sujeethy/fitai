@@ -16,7 +16,7 @@ export function Screen({ title, subtitle, children, footer, headerRight }: Props
   const insets = useSafeAreaInsets();
 
   return (
-    <View className="flex-1 bg-neutral-950">
+    <View className="flex-1 bg-surface">
       <ScrollView
         contentContainerStyle={{
           paddingTop: insets.top + 20,
@@ -27,8 +27,8 @@ export function Screen({ title, subtitle, children, footer, headerRight }: Props
       >
         <View className="flex-row items-start justify-between gap-3">
           <View className="flex-1">
-            <Text className="text-3xl font-bold text-white">{title}</Text>
-            {subtitle ? <Text className="mt-1 text-neutral-400">{subtitle}</Text> : null}
+            <Text className="text-3xl font-bold text-textPrimary">{title}</Text>
+            {subtitle ? <Text className="mt-1 text-textMuted">{subtitle}</Text> : null}
           </View>
           {headerRight ? <View className="pt-1">{headerRight}</View> : null}
         </View>
@@ -37,7 +37,7 @@ export function Screen({ title, subtitle, children, footer, headerRight }: Props
 
       {footer ? (
         <View
-          className="border-t border-neutral-900 bg-neutral-950 px-5 pt-3"
+          className="border-t border-borderMuted bg-surface px-5 pt-3"
           style={{ paddingBottom: insets.bottom + 12 }}
         >
           {footer}

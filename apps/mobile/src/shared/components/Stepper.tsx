@@ -82,7 +82,7 @@ export function Stepper({
 
   return (
     <View className="flex-1">
-      <Text className="mb-2 text-[11px] font-medium uppercase tracking-widest text-neutral-500">
+      <Text className="mb-2 text-[11px] font-medium uppercase tracking-widest text-textMuted">
         {label}
       </Text>
 
@@ -104,7 +104,7 @@ export function Stepper({
               keyboardType="decimal-pad"
               returnKeyType="done"
               selectTextOnFocus
-              className="w-full rounded-xl bg-neutral-800 py-1.5 text-center text-2xl font-semibold text-white"
+              className="w-full rounded-xl bg-surfaceOverlay py-1.5 text-center text-2xl font-semibold text-textPrimary"
             />
           ) : (
             <Pressable
@@ -117,9 +117,9 @@ export function Stepper({
               hitSlop={10}
             >
               <Animated.View style={numberStyle} className="flex-row items-baseline">
-                <Text className="text-3xl font-semibold text-white">{display}</Text>
+                <Text className="text-3xl font-semibold text-textPrimary">{display}</Text>
                 {suffix ? (
-                  <Text className="ml-0.5 text-base text-neutral-500">{suffix}</Text>
+                  <Text className="ml-0.5 text-base text-textMuted">{suffix}</Text>
                 ) : null}
               </Animated.View>
             </Pressable>
@@ -134,7 +134,7 @@ export function Stepper({
       </View>
 
       {!editing ? (
-        <Text className="mt-1.5 text-center text-[10px] text-neutral-600">tap number to type</Text>
+        <Text className="mt-1.5 text-center text-[10px] text-textFaint">tap number to type</Text>
       ) : null}
     </View>
   );
@@ -166,9 +166,9 @@ function StepButton({
         scale.value = withSpring(1, { damping: 12, stiffness: 300 });
       }}
       style={style}
-      className="h-14 w-14 items-center justify-center rounded-2xl border border-neutral-700/60 bg-neutral-800"
+      className="h-14 w-14 items-center justify-center rounded-2xl border border-borderStrong/60 bg-surfaceOverlay"
     >
-      <Text className="text-2xl font-bold text-white">{sign}</Text>
+      <Text className="text-2xl font-bold text-textPrimary">{sign}</Text>
     </AnimatedPressable>
   );
 }

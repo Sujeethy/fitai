@@ -80,15 +80,25 @@ often enough to justify in-app editing.
 
 ## 2. Visual design
 
+> **Token layer built.** `apps/mobile/src/shared/theme/colors.ts` defines
+> semantic tokens (`surface`, `surfaceRaised`, `surfaceOverlay`, `border`,
+> `accent`, `success`, `warning`, `danger`, `textPrimary`, `textSecondary`,
+> `textMuted`, `textFaint`, `textInverse`, …), mirrored as Tailwind utility
+> classes in `apps/mobile/tailwind.config.js` (the two are kept in sync by
+> hand — Node loads the Tailwind config directly, so it can't import the TS
+> module). `Screen`, `EmptyState`, `Button`, `Stepper`, and `AccountButton` —
+> the components every screen composes from — are converted. The rest of the
+> app (~20 screens) still hardcodes `bg-neutral-900` / `text-emerald-400`
+> directly; that conversion is the restyle pass below, still to do.
+
 The current look is placeholder: emerald on near-black, one accent, no scale.
 It needs to read like a real fitness app.
 
-**Build a token layer first** — `src/shared/theme/` with semantic names
-(`surface`, `surfaceRaised`, `accent`, `success`, `warning`, `textPrimary`,
-`textMuted`) rather than Tailwind colours inline. Every screen currently hardcodes
-`bg-neutral-900` and `text-emerald-400`; that is why the theme cannot be changed
-in one place. Do the token layer before any restyling, or the restyle has to
-happen twice.
+Now that the token layer exists, the restyle pass is: audit each screen
+folder, swap hardcoded Tailwind colors for the semantic classes
+(`bg-surface`, `text-textMuted`, `border-border`, …), and use the Design
+plugin's `design-critique` skill to check the result actually reads as
+intentional rather than just find-and-replaced.
 
 Direction worth taking from apps in this category (Strong, Hevy, Whoop):
 
