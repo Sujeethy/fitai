@@ -38,3 +38,10 @@ jobs:
       # otherwise surfaces as a confusing runtime failure on a real device.
       - name: Migrations match schema
         run: pnpm db:check
+
+      # EAS runs this during a build, which is a slow and expensive place to
+      # first learn that a config is wrong. Running it here surfaces the same
+      # problems in a minute instead of twenty.
+      - name: Expo doctor
+        working-directory: apps/mobile
+        run: npx -y expo-doctor
