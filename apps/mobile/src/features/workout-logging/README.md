@@ -4,9 +4,22 @@ Logging sets during a session — the core loop, and the thing the whole app is
 judged on.
 
 **Screens:** `app/session/[id].tsx`
-**Tables:** `sessions`, `session_exercises`, `sets`, `change_journal`
+**Tables:** `sessions`, `session_exercises`, `sets`, `routine_sets`, `change_journal`
 
-## The one idea
+## Two modes, one card
+
+`ExerciseCard` renders one of two flows, decided by whether `item.plannedSets` is
+non-empty (i.e. this exercise came from a routine day):
+
+- **Routine session:** `PlannedSetRow` lists each planned set — warmup, feeler,
+  working — with its target. Tapping "Log" hits the target in one tap; tapping the
+  row opens steppers pre-filled with the target for the set that doesn't match.
+  Anything logged beyond the plan's set count renders as ordinary extra sets below.
+- **Ad hoc session (no plan):** the original free-form flow — steppers plus a single
+  Log button. This is also what "extra work" beyond a routine falls back to once
+  the plan's own sets are all logged.
+
+## The one idea (ad hoc / extra sets)
 
 **Never show an empty form.** Opening an exercise pre-fills exactly what you'd
 most likely do next, so the common case is confirmation rather than data entry.
@@ -16,6 +29,9 @@ most likely do next, so the common case is confirmation rather than data entry.
 1. The previous set in *this* session — most sets repeat the one before
 2. What you did for this exercise last time
 3. An empty bar, only if the exercise is new to you
+
+A routine session's planned rows don't use this — their prefill is the routine's
+own target, not the last-time heuristic.
 
 ## Speed decisions
 

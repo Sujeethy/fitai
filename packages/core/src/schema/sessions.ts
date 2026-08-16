@@ -52,6 +52,9 @@ export const sessionExercises = sqliteTable(
     exerciseId: text('exercise_id').notNull(),
     plannedExerciseId: text('planned_exercise_id'),
     substitutionReason: text('substitution_reason'),
+    /** Set when this row came from a routine day, even through a later swap — this
+     *  is what keeps the planned-set targets (routine_sets) attached to the row. */
+    routineExerciseId: text('routine_exercise_id'),
     position: integer('position').notNull(),
   },
   (t) => [

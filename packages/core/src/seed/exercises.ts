@@ -73,6 +73,22 @@ export const SEED_EXERCISES: readonly SeedExercise[] = [
   { slug: 'plank', name: 'Plank', primaryMuscle: 'core', secondaryMuscles: [], equipment: 'bodyweight', aliases: [], incrementKg: 1 },
   { slug: 'cable-crunch', name: 'Cable Crunch', primaryMuscle: 'core', secondaryMuscles: [], equipment: 'cable', aliases: [], incrementKg: 2.5 },
   { slug: 'hanging-leg-raise', name: 'Hanging Leg Raise', primaryMuscle: 'core', secondaryMuscles: [], equipment: 'bodyweight', aliases: [], incrementKg: 1 },
+
+  // -- Added for the routine in docs/NEXT.md §1 -----------------------------
+  { slug: 'smith-incline-press', name: 'Smith Machine Incline Press', primaryMuscle: 'chest', secondaryMuscles: ['front-delts', 'triceps'], equipment: 'smith-machine', aliases: ['smith incline'], incrementKg: 2.5 },
+  { slug: 'smith-close-grip-press', name: 'Smith Machine Close-Grip Press', primaryMuscle: 'triceps', secondaryMuscles: ['chest'], equipment: 'smith-machine', aliases: ['smith close grip', 'smith cgbp'], incrementKg: 2.5 },
+  { slug: 'plate-loaded-lat-pulldown', name: 'Plate-Loaded Lat Pulldown', primaryMuscle: 'lats', secondaryMuscles: ['biceps'], equipment: 'machine', aliases: [], incrementKg: 5 },
+  { slug: 'chest-supported-row-vertical', name: 'Chest-Supported Row (Vertical Grip)', primaryMuscle: 'back', secondaryMuscles: ['lats', 'biceps'], equipment: 'machine', aliases: ['vertical grip row'], incrementKg: 2.5 },
+  { slug: 'converging-chest-press', name: 'Converging Machine Chest Press', primaryMuscle: 'chest', secondaryMuscles: ['triceps', 'front-delts'], equipment: 'machine', aliases: [], incrementKg: 2.5 },
+  { slug: 'machine-lateral-raise', name: 'Machine Lateral Raise', primaryMuscle: 'side-delts', secondaryMuscles: [], equipment: 'machine', aliases: [], incrementKg: 2.5 },
+  { slug: 'reverse-pec-deck', name: 'Reverse Pec Deck', primaryMuscle: 'rear-delts', secondaryMuscles: ['traps'], equipment: 'machine', aliases: ['reverse fly machine'], incrementKg: 2.5 },
+  { slug: 'hack-squat-sled', name: 'Hack Squat Sled', primaryMuscle: 'quads', secondaryMuscles: ['glutes'], equipment: 'machine', aliases: ['sled hack squat'], incrementKg: 5 },
+  { slug: 'hyperextension', name: 'Hyperextension', primaryMuscle: 'hamstrings', secondaryMuscles: ['glutes', 'back'], equipment: 'machine', aliases: ['back extension'], incrementKg: 1 },
+  { slug: 'cable-woodchopper', name: 'Cable Woodchopper', primaryMuscle: 'core', secondaryMuscles: [], equipment: 'cable', aliases: ['woodchopper'], incrementKg: 2.5 },
+  { slug: 'wrist-curl', name: 'Wrist Curl', primaryMuscle: 'forearms', secondaryMuscles: [], equipment: 'dumbbell', aliases: [], incrementKg: 1 },
+  { slug: 'incline-dumbbell-curl', name: 'Incline Dumbbell Curl', primaryMuscle: 'biceps', secondaryMuscles: ['forearms'], equipment: 'dumbbell', aliases: [], incrementKg: 1 },
+  { slug: 'single-arm-cable-lateral-raise', name: 'Single-Arm Cable Lateral Raise', primaryMuscle: 'side-delts', secondaryMuscles: [], equipment: 'cable', aliases: [], incrementKg: 1 },
+  { slug: 'single-arm-cable-lateral-raise-behind', name: 'Single-Arm Cable Lateral Raise (Behind the Back)', primaryMuscle: 'side-delts', secondaryMuscles: ['rear-delts'], equipment: 'cable', aliases: ['behind the back lateral raise'], incrementKg: 1 },
 ];
 
 /**

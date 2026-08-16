@@ -6,6 +6,7 @@ import * as se from './local/sessions';
 import * as st from './local/sets';
 import * as bw from './local/bodyWeights';
 import * as hi from './local/history';
+import * as ro from './local/routines';
 
 /**
  * The SQLite implementation of the repository — the only code in the project that
@@ -33,6 +34,10 @@ export function createLocalRepository(
     listExercises: (q) => ex.listExercises(db, ctx(), q),
     getExercise: (id) => ex.getExercise(db, ctx(), id),
     suggestSubstitutes: (id, opts) => ex.suggestSubstitutes(db, ctx(), id, opts),
+
+    // -- Routines -------------------------------------------------------------
+    getTodayPlan: (date) => ro.getTodayPlan(db, ctx(), date),
+    startRoutineSession: (input) => ro.startRoutineSession(db, ctx(), input),
 
     // -- Sessions -----------------------------------------------------------
     listSessions: (q) => se.listSessions(db, ctx(), q),

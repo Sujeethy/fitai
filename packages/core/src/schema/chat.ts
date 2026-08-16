@@ -1,6 +1,12 @@
 import { sqliteTable, text, integer, index } from 'drizzle-orm/sqlite-core';
 import { baseColumns } from './_shared';
 
+/**
+ * Reserved for Phase 6 (the chat assistant). Nothing reads or writes these tables
+ * yet — kept in the schema now, rather than added later, so the shape has been
+ * around and reviewed by the time Phase 6 needs it. See PLAN.md §10 and
+ * CLAUDE.md's "things that look like bugs" table.
+ */
 export const chatThreads = sqliteTable(
   'chat_threads',
   {

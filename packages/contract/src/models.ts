@@ -48,6 +48,9 @@ export interface SessionExercise extends Entity {
   /** What the plan of record said. Null only for exercises added mid-session. */
   readonly plannedExerciseId: string | null;
   readonly substitutionReason: SubstitutionReason | null;
+  /** Set when this row traces back to a routine day, even through a later swap —
+   *  it's what keeps that exercise's planned sets (targets) attached. */
+  readonly routineExerciseId: string | null;
   readonly position: number;
 }
 
@@ -91,6 +94,62 @@ export interface SessionDetail extends Session {
     readonly exercise: Exercise;
     readonly plannedExercise: Exercise | null;
     readonly sets: readonly WorkoutSet[];
+    /** The routine's targets for this exercise, in order. Empty when the exercise
+     *  did not come from a routine day (ad-hoc or added mid-session). */
+    readonly plannedSets: readonly RoutineSetPlan[];
+  })[];
+}
+
+// ---------------------------------------------------------------------------
+// Routines — the fixed cycle Today reads from. See docs/NEXT.md §1.
+// ---------------------------------------------------------------------------
+
+export interface Routine extends Entity {
+  readonly name: string;
+  readonly currentVersionId: string | null;
+  readonly cycleLength: number;
+  readonly anchorDate: string | null;
+  readonly isActive: boolean;
+  readonly archivedAt: string | null;
+}
+
+export interface RoutineDay extends Entity {
+  readonly routineVersionId: string;
+  readonly dayIndex: number;
+  readonly name: string;
+  readonly isRestDay: boolean;
+  readonly warmupNote: string | null;
+}
+
+export interface RoutineExercisePlan extends Entity {
+  readonly routineDayId: string;
+  readonly exerciseId: string;
+  readonly position: number;
+  readonly note: string | null;
+}
+
+export interface RoutineSetPlan extends Entity {
+  readonly routineExerciseId: string;
+  readonly position: number;
+  readonly setType: SetType;
+  readonly targetWeightKg: number | null;
+  readonly targetReps: number | null;
+  readonly targetNote: string | null;
+  readonly restSeconds: number | null;
+}
+
+/**
+ * Today's plan, computed from the active routine's `anchorDate` and `cycleLength` —
+ * everything the checklist needs in one read. `null` when there's no active
+ * routine, which the UI treats as "go ad hoc" rather than an error.
+ */
+export interface TodayPlan {
+  readonly routineId: string;
+  readonly routineVersionId: string;
+  readonly day: RoutineDay;
+  readonly exercises: readonly (RoutineExercisePlan & {
+    readonly exercise: Exercise;
+    readonly sets: readonly RoutineSetPlan[];
   })[];
 }
 

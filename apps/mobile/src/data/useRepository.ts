@@ -5,6 +5,7 @@ import type {
   LogSetInput,
   ReplaceExerciseInput,
   Result,
+  StartRoutineSessionInput,
   StartSessionInput,
   UpdateSetInput,
 } from '@fitai/contract';
@@ -37,6 +38,32 @@ export function useExercises(search?: string) {
   return useQuery({
     queryKey: queryKeys.exercises.list(search),
     queryFn: () => unwrap(repository.listExercises({ limit: 200, cursor: null, search })),
+  });
+}
+
+/**
+ * Today's plan, computed from the active routine's cycle. `null` when there is no
+ * active routine — Today falls back to ad-hoc mode rather than treating it as an
+ * error. See docs/NEXT.md §1.
+ */
+export function useTodayPlan(date: string) {
+  return useQuery({
+    queryKey: queryKeys.today.plan(date),
+    queryFn: () => unwrap(repository.getTodayPlan(date)),
+  });
+}
+
+export function useStartRoutineSession() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: StartRoutineSessionInput) => {
+      beginUserAction();
+      return unwrap(repository.startRoutineSession(input));
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: queryKeys.sessions.all });
+      void qc.invalidateQueries({ queryKey: queryKeys.journal.all });
+    },
   });
 }
 

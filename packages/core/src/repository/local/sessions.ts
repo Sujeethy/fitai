@@ -21,6 +21,7 @@ import type { FitaiDatabase } from '../types';
 import { nowIso, randomUUID } from '../uuid';
 import { exercisesById } from './exercises';
 import { reinforceSubstitute } from './exercises';
+import { routineSetsByExerciseIds } from './routines';
 import { toSet } from './sets';
 
 type SessionRow = typeof sessions.$inferSelect;
@@ -54,6 +55,7 @@ export function toSessionExercise(r: SessionExerciseRow): SessionExercise {
     exerciseId: r.exerciseId,
     plannedExerciseId: r.plannedExerciseId,
     substitutionReason: r.substitutionReason as SubstitutionReason | null,
+    routineExerciseId: r.routineExerciseId,
     position: r.position,
   };
 }
@@ -191,6 +193,7 @@ export async function addSessionExercise(
     exerciseId: input.exerciseId,
     plannedExerciseId: input.plannedExerciseId ?? null,
     substitutionReason: input.substitutionReason ?? null,
+    routineExerciseId: null,
     position: input.position,
   };
 
@@ -293,6 +296,9 @@ export async function replaceExercise(
     // "is my hack squat progressing as well as my leg press was?"
     plannedExerciseId: input.plannedExerciseId,
     substitutionReason: input.reason,
+    // Carried over from the row being replaced, so a swap doesn't drop the routine's
+    // planned-set targets — only the exercise identity changes.
+    routineExerciseId: existing?.routineExerciseId ?? null,
     position,
   };
 
@@ -331,6 +337,10 @@ export async function getSession(
 
   const ids = seRows.flatMap((r) => [r.exerciseId, r.plannedExerciseId].filter(Boolean) as string[]);
   const lookup = await exercisesById(db, ids);
+  const plannedSetsByExercise = await routineSetsByExerciseIds(
+    db,
+    seRows.flatMap((r) => (r.routineExerciseId ? [r.routineExerciseId] : [])),
+  );
 
   const withSets = [];
   for (const se of seRows) {
@@ -348,6 +358,7 @@ export async function getSession(
       exercise,
       plannedExercise: se.plannedExerciseId ? (lookup.get(se.plannedExerciseId) ?? null) : null,
       sets: setRows.map(toSet) as readonly WorkoutSet[],
+      plannedSets: se.routineExerciseId ? (plannedSetsByExercise.get(se.routineExerciseId) ?? []) : [],
     });
   }
 

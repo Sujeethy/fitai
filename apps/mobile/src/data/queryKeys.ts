@@ -15,6 +15,11 @@ export const queryKeys = {
     substitutes: (id: string) => ['exercises', 'substitutes', id] as const,
   },
 
+  today: {
+    all: ['today'] as const,
+    plan: (date: string) => ['today', 'plan', date] as const,
+  },
+
   sessions: {
     all: ['sessions'] as const,
     list: () => ['sessions', 'list'] as const,

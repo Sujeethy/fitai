@@ -160,6 +160,8 @@ Ordered by how often they'd be "fixed" by mistake:
 | `contract/` describes an API that doesn't exist | The backend implements it in Phase 9. Designing it now means it's been exercised for months. |
 | Pagination arguments the local implementation ignores | Same reason. |
 | `packages/api` exists but is empty | Placeholder for Phase 9. Leave it. |
+| `chat_threads` / `chat_messages` exist in the schema but nothing reads or writes them | Reserved for Phase 6, the chat assistant. See the comment on `packages/core/src/schema/chat.ts`. |
+| `routine_exercises` / `routine_sets` accept a real 7-day program's worth of data but nothing has seeded one | The app is routine-first (docs/adr/0007) and the mechanism is built — Today, the repository, the checklist. The actual routine content is deliberately not fabricated; see ADR 0007's "Rejected" section. |
 | `react-native-reanimated` listed though unused | NativeWind needs it as a peer, so it is in the tree regardless. It also brings `react-native-worklets`, which supplies NativeWind's Babel plugin. |
 | `babel.config.js` inline-imports `.sql` **and** `metro.config.js` adds a `sql` sourceExt | Two halves of one mechanism — Drizzle's generated migrations are `.sql` files that must become strings at build time. Remove either and `migrate()` fails: without the Babel plugin Metro parses the SQL as JavaScript. |
 | `@fitai/core/migrations` is a subpath export, not part of the root index | The root index is loaded by vitest in plain Node, where the `.sql` import has no Babel transform and throws. Only the app takes the migrations path. |
@@ -171,10 +173,16 @@ Ordered by how often they'd be "fixed" by mistake:
 
 ## Before starting new work
 
-Read **[docs/NEXT.md](./docs/NEXT.md)** first. It carries the agreed-but-unbuilt
-design, and one correction that PLAN.md predates:
+Read **[docs/NEXT.md](./docs/NEXT.md)** first. It carries the agreed direction, and
+one correction that PLAN.md predates:
 
 **The app is routine-first, not ad hoc.** PLAN.md was written assuming no fixed
 training program. There is one — a 7-day cycle, Monday = Day 1, rest on Wednesday
-and Sunday, varied only ~5–10% when equipment is busy. Anywhere PLAN.md or
-`docs/adr/0004` says "no fixed program", docs/NEXT.md supersedes it.
+and Sunday, varied only ~5–10% when equipment is busy. Anywhere PLAN.md or the schema
+comments say "no fixed program", `docs/adr/0007-routine-first-training-model.md`
+supersedes it. The schema, repository, and Today's checklist for this are built;
+what's still open is listed in `docs/NEXT.md` §1's "open questions" — chiefly that the
+routine's real content (the actual 7 days of exercises and targets) has not been
+seeded, since fabricating that data would be indistinguishable in the app from the
+real thing. `docs/NEXT.md` §§2–5 (visual design, charts, housekeeping, tooling) are
+still agreed-but-unbuilt.

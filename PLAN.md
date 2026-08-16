@@ -16,8 +16,11 @@ Status: **Phases 0–1 built and shipping.** This document is the agreed directi
 > built ad hoc. That was wrong: there is a fixed 7-day routine, varied only ~5–10%
 > when equipment is busy or time is short. The app therefore makes you add every
 > exercise every session, which is the wrong shape. The routine-first design that
-> replaces it is in **[docs/NEXT.md](./docs/NEXT.md) §1**; every "no fixed program"
-> statement below is superseded by it.
+> replaces it is in **[docs/NEXT.md](./docs/NEXT.md) §1**, recorded in
+> **[docs/adr/0007](./docs/adr/0007-routine-first-training-model.md)**; every "no
+> fixed program" statement below is superseded by it. Schema, repository, and the
+> Today checklist are built; the routine's actual content (the real exercises and
+> targets) is not yet seeded — see ADR 0007's "Rejected" section for why.
 
 ---
 
@@ -299,9 +302,17 @@ Items 1–4 and 7–8 are Phase 2 and carry nearly all the speed. 5–6 are poli
 
 ---
 
-## 8. Planning a session with no fixed program
+## 8. Planning a session
 
-You don't follow a fixed program, so "what am I doing today?" is a real question.
+> **Superseded by [docs/NEXT.md](./docs/NEXT.md) §1 and
+> [docs/adr/0007](./docs/adr/0007-routine-first-training-model.md).** This section
+> assumed no fixed program, so "what am I doing today?" was framed as a choice
+> between four equally-likely modes. In fact Today defaults to whatever the active
+> routine's cycle says, computed from its `anchorDate` — "From a routine" below is
+> now the common path, not an optional one. The other three modes are unchanged and
+> still exist, for days with no active routine or a session that intentionally
+> departs from it.
+
 Four ways to start, all one tap from home:
 
 | Mode | `origin` | What it does |
@@ -649,7 +660,7 @@ per user, or charging.
 | State | **React Query** for database-backed state, **Jotai** for UI state |
 | Multi-user | Schema is multi-tenant from day one; auth at Phase 9 |
 | Distribution | Sideloaded APK now, Play Store at Phase 10 |
-| Training program | None fixed — ad-hoc and generated sessions are first-class |
+| Training program | **Fixed 7-day cycle** (docs/NEXT.md §1, ADR 0007) — ad-hoc and generated sessions remain available for days with no active routine |
 | Units | kg |
 | Backups | Snapshots → Drive folder via SAF, plus Android auto-backup |
 

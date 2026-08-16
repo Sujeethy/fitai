@@ -25,7 +25,7 @@ export const SESSION_ORIGINS = ['repeat', 'adhoc', 'routine', 'generated'] as co
 export const sessionOrigin = z.enum(SESSION_ORIGINS);
 export type SessionOrigin = z.infer<typeof sessionOrigin>;
 
-export const SET_TYPES = ['warmup', 'working', 'drop', 'failure'] as const;
+export const SET_TYPES = ['warmup', 'feeler', 'working', 'drop', 'failure'] as const;
 export const setType = z.enum(SET_TYPES);
 export type SetType = z.infer<typeof setType>;
 
@@ -118,6 +118,13 @@ export const startSessionInput = z.object({
   notes: z.string().max(2000).nullish(),
 });
 export type StartSessionInput = z.infer<typeof startSessionInput>;
+
+/** POST /sessions/from-routine-day — start today's session straight off the plan. */
+export const startRoutineSessionInput = z.object({
+  date: isoDate,
+  routineDayId: uuid,
+});
+export type StartRoutineSessionInput = z.infer<typeof startRoutineSessionInput>;
 
 /** POST /sessions/:id/exercises */
 export const addSessionExerciseInput = z.object({

@@ -13,7 +13,9 @@ import type {
   Session,
   SessionDetail,
   SessionExercise,
+  StartRoutineSessionInput,
   StartSessionInput,
+  TodayPlan,
   UndoBatchInput,
   UpdateSetInput,
   WorkoutSet,
@@ -50,6 +52,17 @@ export interface WorkoutRepository {
     exerciseId: string,
     opts?: { limit?: number },
   ): Promise<Result<readonly Exercise[]>>;
+
+  // -- Routines ---------------------------------------------------------------
+
+  /**
+   * Today's plan, computed from the active routine's cycle. `null` when there is no
+   * active routine — the caller falls back to ad-hoc mode, this is not an error.
+   */
+  getTodayPlan(date: string): Promise<Result<TodayPlan | null>>;
+
+  /** Starts a session prefilled with a routine day's exercises and their targets. */
+  startRoutineSession(input: StartRoutineSessionInput): Promise<Result<Session>>;
 
   // -- Sessions -------------------------------------------------------------
 

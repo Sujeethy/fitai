@@ -25,10 +25,12 @@ none of this is inferable from reading the source.
 |---|---|
 | **Session** | One gym visit. Has a date, an origin, and a list of exercises with their sets. |
 | **Origin** | How a session was started: `repeat` (re-run a previous one), `adhoc` (build as you go), `routine` (from a saved template), `generated` (the LLM proposed it). |
-| **Plan of record** | The exercise list snapshotted when a session starts. Without it, a substitution has nothing to deviate *from* — which matters here because there is no fixed program. |
+| **Plan of record** | The exercise list snapshotted when a session starts — whether that came from a routine day or was built ad hoc. Without it, a substitution has nothing to deviate *from*. |
 | **Substitution** | Doing exercise B where the plan said A — usually because the machine was occupied. Stored as a normal exercise row that remembers `planned_exercise_id` and a reason, so both exercises keep their identity and remain queryable. |
 | **Scope** | Whether a change applies to `today` only, or to the saved `routine` from now on. **Always defaults to `today`.** A `routine` change requires explicit confirmation. |
-| **Routine** | An optional saved template. Versioned, so editing it today doesn't make past sessions look like deviations. |
+| **Routine** | The fixed training program Today reads from — a 7-day cycle in the common case. Versioned, so editing it today doesn't make past sessions look like deviations. See docs/NEXT.md §1 and docs/adr/0007. |
+| **Cycle length / anchor date** | A routine repeats every `cycleLength` days, with `anchorDate` as day 0. Today computes `daysSince(anchorDate) mod cycleLength` to find which day of the routine today is. |
+| **Routine day** | One position in the cycle — its name, whether it's a rest day, and the exercises planned for it. A rest day is a row with `isRestDay: true`, not a missing row. |
 | **Promotion** | When you've made the same swap repeatedly, the app asks *once* whether to make it the routine default. Suggested, never automatic. |
 | **Change journal** | Every mutation, with who made it and the state before and after. Powers undo — and, from Phase 9, doubles as the sync outbox. |
 | **Batch** | A group of changes reverted together. One LLM turn is one batch, so "undo that" reverts the whole instruction rather than one change at a time. |
