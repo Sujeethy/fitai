@@ -5,22 +5,24 @@ works with no signal, stores everything on your phone, and has an LLM assistant 
 your real training history as context — architected so a backend, login, and Play
 Store release can be added later without rewriting anything.
 
-Status: **Phases 0–1 built and shipping.** This document is the agreed direction;
-**[docs/NEXT.md](./docs/NEXT.md) supersedes it wherever the two disagree.**
+Status: **Phases 0–1 built and shipping.** Routine-first model complete — 7-day cycle,
+Today checklist, Routine tab with muscle breakdown, and the real program seeded.
+This document is the agreed direction; **[docs/NEXT.md](./docs/NEXT.md) supersedes
+it wherever the two disagree.**
 
 > **Diagrams and folder structure:** [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md)
 > **Rules for contributors and LLMs:** [CLAUDE.md](./CLAUDE.md)
 > **What's next, and one correction:** [docs/NEXT.md](./docs/NEXT.md)
 
-> **Correction.** This plan assumed **no fixed training program**, so sessions are
-> built ad hoc. That was wrong: there is a fixed 7-day routine, varied only ~5–10%
-> when equipment is busy or time is short. The app therefore makes you add every
-> exercise every session, which is the wrong shape. The routine-first design that
-> replaces it is in **[docs/NEXT.md](./docs/NEXT.md) §1**, recorded in
-> **[docs/adr/0007](./docs/adr/0007-routine-first-training-model.md)**; every "no
-> fixed program" statement below is superseded by it. Schema, repository, and the
-> Today checklist are built; the routine's actual content (the real exercises and
-> targets) is not yet seeded — see ADR 0007's "Rejected" section for why.
+> **Correction — now complete.** This plan assumed **no fixed training program**,
+> so sessions were built ad hoc. That was wrong: there is a fixed 7-day routine,
+> varied only ~5–10% when equipment is busy or time is short. The
+> **routine-first design is now fully shipped**, recorded in
+> **[docs/adr/0007](./docs/adr/0007-routine-first-training-model.md)**. Schema,
+> repository, Today's checklist, and a read-only Routine tab with weekly muscle
+> breakdown all exist. The real 7-day, 77-working-set program is seeded from
+> `packages/core/src/seed/routine.ts` on first app launch, with version-aware
+> re-seeding for updates. For details, see **[docs/NEXT.md](./docs/NEXT.md) §1**.
 
 ---
 
@@ -305,34 +307,29 @@ Items 1–4 and 7–8 are Phase 2 and carry nearly all the speed. 5–6 are poli
 
 ## 8. Planning a session
 
-> **Superseded by [docs/NEXT.md](./docs/NEXT.md) §1 and
-> [docs/adr/0007](./docs/adr/0007-routine-first-training-model.md).** This section
-> assumed no fixed program, so "what am I doing today?" was framed as a choice
-> between four equally-likely modes. In fact Today defaults to whatever the active
-> routine's cycle says, computed from its `anchorDate` — "From a routine" below is
-> now the common path, not an optional one. The other three modes are unchanged and
-> still exist, for days with no active routine or a session that intentionally
-> departs from it.
+> **Updated:** [docs/adr/0007](./docs/adr/0007-routine-first-training-model.md)
+> records the routine-first model. Today defaults to the active routine's cycle,
+> computed from its `anchorDate`. "From a routine" is now the common path.
+> Ad hoc and generated sessions remain available for days with no active routine
+> or a session that intentionally departs from it.
 
-Four ways to start, all one tap from home:
+**Primary:** Today shows the day's plan from the active routine's cycle — exercise
+list, planned sets, targets, and rest time, all pre-filled. Tap Start to log.
 
-| Mode | `origin` | What it does |
-|---|---|---|
-| **Repeat** | `repeat` | Re-runs a previous session, prefilled. Probably your default. |
-| **Ad hoc** | `adhoc` | Empty session, add as you go |
-| **From a routine** | `routine` | If you've saved one. Optional, never required. |
-| **Generated** | `generated` | "I have 30 minutes, build me something" |
+**Fallback (ad hoc):** If there's no active routine or you're skipping today's plan,
+start an empty session and add exercises as you go. Also used for one-off workouts
+outside the program.
 
-`suggest_session` reads the last two weeks, weights toward neglected muscle groups,
-and avoids anything trained in the last 48 hours.
+**Generated:** "I have 30 minutes, build me something" — `suggest_session` reads the
+last two weeks, weights toward neglected muscle groups, and avoids anything trained
+in the last 48 hours.
 
-**Save-as-routine after the fact.** Any session you liked gets a "save as routine"
-button, so templates accumulate from what you actually did rather than what you
-planned up front.
+**Origin field:** every session remembers how it started (`routine` / `adhoc` / `generated`),
+so the log can later answer "how many times did I bail on the program?"
 
-**The plan of record:** whichever mode you start in, the session's initial exercise
-list is snapshotted. This is what makes §9 work without a fixed program —
-"substitution" needs something to have been planned, and now there always is one.
+**The plan of record:** whatever mode you start in, the session's initial exercise
+list is snapshotted. This is what makes §9 work — "substitution" needs something to
+have been planned, and now there always is one.
 
 ---
 
@@ -597,7 +594,7 @@ Each phase ends with something usable.
 | Phase | Deliverable | Done when |
 |---|---|---|
 | **0 — Foundation** | Expo scaffold, Expo Router, NativeWind, Drizzle schema + migrations, multi-tenant `user_id`, repository interface, `Result` type, contract package, React Query + Jotai wiring, seeded exercise library, CLAUDE.md, ADRs, `.claude/skills/`, **GitHub Actions (checks + auto `eas update`) and lint rules enforcing the §5 invariants** | The app boots, the schema migrates cleanly, and CI fails if a component imports the database directly |
-| **1 — Log things** | Sessions, exercises, sets, body weight, history. **Snapshots and Drive backup ship here.** | You log a real session in airplane mode and a backup lands in Drive |
+| **1 — Log things** | Sessions, exercises, sets, body weight, history. **Routine-first model shipped here:** 7-day cycle, Today checklist, Routine tab with weekly muscle breakdown, 3-tab nav (Today/Routine/Weight). Snapshots and Drive backup included.** | You log a real session from the routine in airplane mode and a backup lands in Drive |
 | **2 — Make it fast** | §7 in full, including the background rest timer | A full session takes under 90 seconds of screen time |
 | **3 — Session planning** | The four start modes, plan of record, save-as-routine, `suggest_session` | Starting a session never needs typing an exercise name |
 | **4 — Substitutions** | Swap flow, history-ranked substitutes, reasons, routine versioning | Two-tap swap, and "what do I do when the leg press is taken?" has a real answer |
@@ -661,7 +658,7 @@ per user, or charging.
 | State | **React Query** for database-backed state, **Jotai** for UI state |
 | Multi-user | Schema is multi-tenant from day one; auth at Phase 9 |
 | Distribution | Sideloaded APK now, Play Store at Phase 10 |
-| Training program | **Fixed 7-day cycle** (docs/NEXT.md §1, ADR 0007) — ad-hoc and generated sessions remain available for days with no active routine |
+| Training program | **Fixed 7-day cycle, routine-first** (docs/NEXT.md §1, ADR 0007). 77-working-set program seeded from `packages/core/src/seed/routine.ts`, with version-aware re-seeding. Ad hoc and generated sessions remain available as fallbacks. |
 | Units | kg |
 | Backups | Snapshots → Drive folder via SAF, plus Android auto-backup |
 

@@ -3,119 +3,78 @@
 Everything agreed but not yet built, written so a fresh session can pick it up
 without re-deriving the reasoning. Ordered by value.
 
-**Where things stand:** Phases 0 and 1 are complete and pushed — logging, swaps,
-body weight, history with undo, backup and restore, crash reporting, OTA updates.
-50 tests, CI green. See [PLAN.md](../PLAN.md) for the architecture.
+**Where things stand:** Phases 0–1 complete — logging, swaps, body weight, history
+with undo, backup and restore, crash reporting, OTA updates, **routine-first model
+with 7-day cycle, Today checklist, and Routine tab with muscle breakdown**. 71 tests,
+CI green. See [PLAN.md](../PLAN.md) for the architecture.
 
 ---
 
 ## 1. Routines — the correction that matters most
 
-> **Built, and seeded with the real program.** Schema, migration, repository
-> (`getTodayPlan`, `getActiveRoutine`, `startRoutineSession`), the Today checklist,
-> and a read-only Routine tab all exist — see
-> [docs/adr/0007](./adr/0007-routine-first-training-model.md). `packages/core/src/seed/routine.ts`
-> holds the actual 7-day, 77-working-set program, seeded once on first app launch
-> the same way the exercise library is (`ensureSeedRoutine` in
-> `apps/mobile/src/data/migrate.ts`) — anchored to the Monday of the week the app
-> was first opened. Open question 1 below (in-app editing) is still open: for now,
-> changing the program means editing `seed/routine.ts` and reinstalling, since
-> `ensureSeedRoutine` only runs while the `routines` table is empty.
+> **Fully complete.** Schema, migration, repository (`getTodayPlan`, `getActiveRoutine`,
+> `startRoutineSession`), Today's checklist, and a read-only Routine tab with
+> weekly muscle volume breakdown — all shipped and working. See
+> [docs/adr/0007](./adr/0007-routine-first-training-model.md).
+> 
+> **The real 7-day, 77-working-set program lives in**
+> `packages/core/src/seed/routine.ts`, seeded on first launch via `ensureSeedRoutine`
+> in `apps/mobile/src/data/migrate.ts`. Uses version-aware re-seeding (stored in
+> `routine_version.changeNote`) so updating the program works on existing installs
+> without mutating old versions.
 
-**The problem:** the app currently makes you add every exercise, every session.
-For a fixed 7-day routine that is ~6 exercises × 7 days of data entry, forever.
+### What's built
 
-**Why it's wrong:** early on the brief said "no fixed program", so sessions were
-built ad hoc and routines were an optional "save as routine" afterthought. The
-real pattern is the opposite — **a fixed 7-day cycle, varied maybe 5–10% when
-equipment is busy or time is short.**
+| Part | Location | Status |
+|---|---|---|
+| Schema — 7-day cycle, per-set targets, warmup/feeler sets, rest time | `packages/core/src/schema/routine.ts` | ✓ |
+| Real program — all 77 working sets, single-stack cable movements | `packages/core/src/seed/routine.ts` | ✓ |
+| Repository methods — cycle math, today's plan, active routine | `packages/core/src/repository/types.ts` + `*Repository` impls | ✓ |
+| Today checklist — pre-filled, one-tap logging, progress ring | `apps/mobile/app/(tabs)/today.tsx`, `WorkoutSessionScreen` | ✓ |
+| Routine tab — all 7 days with expand/collapse, muscle breakdown | `apps/mobile/app/(tabs)/routine.tsx`, `RoutineDayCard`, `MuscleVolumeTable` | ✓ |
+| Navigation — 3 bottom tabs (Today/Routine/Weight); History/Backup in Account | `apps/mobile/app/(tabs)`, Account screen | ✓ |
+| Muscle volume — primary-muscle counting, secondary as "+N indirect" | `packages/core/src/routine/muscleVolume.ts` | ✓ |
 
-### The schema gap
-
-The routine that needs to fit is far more prescriptive than what exists:
-
-| The routine specifies | Schema has today |
-|---|---|
-| A **7-day cycle**, Monday = Day 1, rest on Wed and Sun | No cycle concept at all |
-| **Per-set targets** — "Working Set 1: 22.50 kg × 12" | Only `targetSets` + a rep range for the whole exercise |
-| **Warmup and feeler sets** as planned rows | Set types exist, but not as *planned* rows |
-| **Rest per set** — 60s / 90s / 120s | Nothing |
-| Attachment and grip notes — "single cable stack, rope" | Nothing |
-
-### Tables to add
+**Today** shows the day's checklist with exercise targets pre-filled:
 
 ```
-routines            + cycleLength (7), anchorDate (a Monday), isActive
-  routine_versions    (unchanged — versioning already correct)
-    routine_days      dayIndex 0-6, name, isRestDay, warmupNote
-      routine_exercises  moves under a DAY rather than a version;
-                         gains `note` for attachment/grip
-        routine_sets     NEW — position, setType, targetWeightKg,
-                         targetReps, targetNote, restSeconds
+Day 1 · Balanced Push
+6 exercises · 17 sets · Progress: 0/17
+⋮ Seated Machine Chest Press     [Swap]
+  🟡 Warm-up  20.00 kg × 12      [Log] rest 60s
+  🔵 Working  22.50 kg × 12      [Log] rest 90s
+  🔵 Working  22.50 kg × 12      [Log] rest 90s
 ```
 
-Two decisions worth keeping:
-
-- **`cycleLength` + `anchorDate`, not weekday flags.** A 7-day cycle anchored to a
-  Monday makes Day 1 = Monday forever. A 5-day cycle would drift through the week,
-  which is what some programmes want — a number expresses both, weekday flags
-  only express one.
-- **Rest days are rows, not gaps.** "Rest day" is information the Today screen
-  should show. A missing row is indistinguishable from a broken routine.
-
-`routine_sets.targetWeightKg` is nullable — the plan says "empty sled" and
-"bodyweight" in places, and `targetNote` carries "to complete failure, 0 RIR".
-
-### Seed the real routine
-
-Enter all 7 days from the programme in chat history — ~30 exercises, 77 working
-sets, Monday anchored. Several exercises are missing from the seed library and
-need adding:
-
-Smith machine (incline, close-grip), plate-loaded lat pulldown, chest-supported
-row (both horizontal and vertical grip), converging machine chest press, machine
-lateral raise, reverse pec dec, hack squat sled, hyperextensions, cable
-woodchoppers, wrist curls, incline dumbbell curl, single-arm cable lateral raise
-(and the behind-the-back variant).
-
-**Every cable movement in the programme uses a single stack** — deliberate, because
-occupying two cable towers in a crowded gym is antisocial. Keep that property when
-suggesting substitutes: never propose a dual-cable movement as a stand-in.
-
-### The UI
-
-**Today becomes a checklist, not a blank page.** It computes the cycle position
-from `anchorDate` and shows:
-
-> **Day 1 · Balanced Push** — 6 exercises · 17 sets
-> *5 min arm circles and light shoulder rotations*
-> \[ Start ]
-
-On a rest day it says so, and offers to log body weight instead.
-
-Tap Start and every exercise is present with its planned sets:
+**Routine tab** lists all 7 days (collapsible cards), plus:
 
 ```
-Seated Machine Chest Press                    [Swap]
-  Warm-up   20.00 kg × 12    ✓ 20.00 × 12
-  Warm-up   40.00 kg ×  8    [ Log ]
-  Working   22.50 kg × 12    [ Log ]      rest 120s
-  Working   22.50 kg × 12    [ Log ]
+Weekly volume by muscle
+Shoulders   1  2  3  0  4  0  0
+  Front delts  2  0  3  0  1  0  0
+  +1 indirect
+Back        3  0  2  0  3  0  0
+…
 ```
 
-- Each row's **Log** pre-fills that exact target — one tap when you hit it, adjust
-  the steppers when you don't
-- **You never type an exercise name**
-- The rest timer starts from that set's planned rest
-- A progress ring shows sets done / sets planned
+Warmups and feelers excluded from volume; only working sets count. Secondary
+muscle involvement shown as footnotes, never merged into the primary total.
 
-### What already works and should not be rebuilt
+### Versioning — re-seeding without mutation
 
-- **Swap** — the two-tap substitution flow, still today-only
-- **Promotion** — after repeated identical swaps, offer to fold it into the
-  routine. That is the "if I like it I may add it to the original" case, and
-  `docs/adr/0004` already covers why it asks rather than acting
-- **Extra work** — anything beyond the plan is still just an added exercise
+`SEED_ROUTINE.version` tags the program in `routine_version.changeNote` when
+seeded. On app launch, `ensureSeedRoutine` checks: if the version is newer than
+what's in the database, create a *new* `routine_version` with the updated program.
+Old sessions stay pinned to their original version. Changing `seed/routine.ts` and
+reinstalling automatically seeds the new program.
+
+### Open: in-app editing
+
+Still deferred. Editing a routine requires a diff preview, versioning on save,
+and deciding what happens to a session already generated from the old version.
+Simpler approach for now: change the program by editing `seed/routine.ts` and
+letting version-aware re-seeding handle the rest. Revisit if the program changes
+often enough to justify in-app editing.
 
 ---
 
@@ -203,14 +162,13 @@ Expo's pricing earlier.
 
 ## Open questions
 
-1. **Should the seeded routine be editable in-app**, or is editing it a later
-   phase? Still open. The Routine tab (`src/features/routine-view/`) is read-only
-   for now — changing the program means editing `seed/routine.ts` directly and
-   reinstalling, since `ensureSeedRoutine` only runs once, while `routines` is
-   still empty. That's fine for a program that changes rarely; revisit if it
+1. **When should the seeded routine be edited in-app?** Deferred. The Routine tab
+   (`src/features/routine-view/`) is read-only for now — changing the program
+   means editing `seed/routine.ts` directly and letting version-aware re-seeding
+   handle the rest. That's fine for a program that changes rarely; revisit if it
    turns out to change often.
-2. **What happens on a missed day?** Decided for now: the cycle stays **pinned to
-   the calendar** — `getTodayPlan` computes the day purely from `anchorDate` and
+2. **What happens on a missed day?** Decided: the cycle stays **pinned to the
+   calendar** — `getTodayPlan` computes the day purely from `anchorDate` and
    today's date, so a skipped Tuesday does not push Wednesday to "Day 2". Simpler,
    and matches a fixed weekly split. Revisit if a drifting-on-miss programme is
    ever wanted (see ADR 0007's "Rejected").
