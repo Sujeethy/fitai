@@ -54,3 +54,12 @@ jobs:
       - name: Expo doctor
         working-directory: apps/mobile
         run: npx -y expo-doctor
+
+      # The production Metro bundle, which is what `:app:createBundleReleaseJsAndAssets`
+      # produces inside a real build. A bad import, a missing Babel transform, or a
+      # module that only resolves in dev fails here in a minute or two rather than
+      # ten minutes into a Gradle run. This is the cheap half of the build check —
+      # the full native one lives in build.yml and runs before EAS is called.
+      - name: Bundle for release
+        working-directory: apps/mobile
+        run: npx expo export --platform android --output-dir /tmp/fitai-bundle-check

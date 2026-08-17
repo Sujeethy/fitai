@@ -4,7 +4,14 @@
     "appVersionSource": "local"
   },
   "build": {
+    "base": {
+      "env": {
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true",
+        "SENTRY_DISABLE_NATIVE_DEBUG_UPLOAD": "true"
+      }
+    },
     "development": {
+      "extends": "base",
       "developmentClient": true,
       "distribution": "internal",
       "channel": "development",
@@ -13,6 +20,7 @@
       }
     },
     "preview": {
+      "extends": "base",
       "distribution": "internal",
       "channel": "preview",
       "android": {
@@ -20,6 +28,7 @@
       }
     },
     "production": {
+      "extends": "base",
       "channel": "production",
       "android": {
         "buildType": "app-bundle"
