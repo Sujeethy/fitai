@@ -10,6 +10,10 @@ on:
         description: "Skip the free native build check (only if it just passed)"
         type: boolean
         default: false
+      dry_run_only:
+        description: "Run only the free native build check, do not spend an EAS build"
+        type: boolean
+        default: false
   push:
     tags: ["v*"]
 
@@ -71,7 +75,12 @@ jobs:
     runs-on: ubuntu-latest
     needs: dry-run
     # `needs` alone would skip this when dry-run is skipped, so allow that case.
-    if: always() && needs.dry-run.result != 'failure' && needs.dry-run.result != 'cancelled'
+    # `dry_run_only` exists for verifying a native change against the free check
+    # without spending one of the month's EAS builds — useful after a dependency
+    # bump, where the thing in doubt is whether Gradle still succeeds.
+    if: |
+      always() && inputs.dry_run_only != true
+      && needs.dry-run.result != 'failure' && needs.dry-run.result != 'cancelled'
     steps:
       - uses: actions/checkout@v4
 
