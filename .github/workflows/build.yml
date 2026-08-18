@@ -5,13 +5,73 @@ name: Build APK
 # cheap thing; builds are the expensive thing. See docs/DEPLOYMENT.md §5.
 on:
   workflow_dispatch:
+    inputs:
+      skip_dry_run:
+        description: "Skip the free native build check (only if it just passed)"
+        type: boolean
+        default: false
   push:
-    tags: ['v*']
+    tags: ["v*"]
 
 jobs:
+  # A full `gradlew :app:assembleRelease` on a GitHub runner, which is free, before
+  # spending one of the month's EAS builds. EAS runs the very same prebuild and
+  # Gradle task, so anything that would fail there — a bad app.config.ts, a broken
+  # Metro resolution, a manifest merge conflict, a misconfigured native plugin —
+  # fails here first, at no quota cost. See docs/DEPLOYMENT.md §5.
+  dry-run:
+    name: Native build dry run
+    runs-on: ubuntu-latest
+    if: inputs.skip_dry_run != true
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - run: pnpm install --frozen-lockfile
+
+      # android/ is gitignored, so this is the same generate-from-config step EAS
+      # performs. --no-install because pnpm already installed the workspace.
+      - name: Prebuild android
+        working-directory: apps/mobile
+        run: npx expo prebuild --platform android --no-install
+
+      # Same task and same environment EAS uses. Only one ABI: the C++ compile is
+      # most of the wall clock and it does not differ per architecture in any way
+      # that would catch a configuration mistake. Errors are what we're after here,
+      # not a shippable binary.
+      - name: Assemble release
+        working-directory: apps/mobile/android
+        run: ./gradlew :app:assembleRelease -PreactNativeArchitectures=arm64-v8a --no-daemon
+        env:
+          NODE_ENV: production
+          SENTRY_DISABLE_AUTO_UPLOAD: "true"
+          SENTRY_DISABLE_NATIVE_DEBUG_UPLOAD: "true"
+
+      # The APK this produces is deliberately thrown away. It is signed with the
+      # template debug keystore, so Android treats it as a different app from the
+      # EAS-signed one and refuses to install over it — you would have to uninstall
+      # first, which deletes the SQLite database and every workout in it. This job
+      # answers "would the build succeed"; installable APKs come from `eas build`.
+
   build:
     name: eas build
     runs-on: ubuntu-latest
+    needs: dry-run
+    # `needs` alone would skip this when dry-run is skipped, so allow that case.
+    if: always() && needs.dry-run.result != 'failure' && needs.dry-run.result != 'cancelled'
     steps:
       - uses: actions/checkout@v4
 

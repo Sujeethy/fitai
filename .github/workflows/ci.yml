@@ -39,6 +39,20 @@ jobs:
       - name: Migrations match schema
         run: pnpm db:check
 
+      # The production Metro bundle, which is what `:app:createBundleReleaseJsAndAssets`
+      # produces inside a real build. A bad import, a missing Babel transform, or a
+      # module that only resolves in dev fails here in a minute or two rather than
+      # ten minutes into a Gradle run. This is the cheap half of the build check —
+      # the full native one lives in build.yml and runs before EAS is called.
+      #
+      # Ahead of expo-doctor deliberately. Doctor reports version drift, which is
+      # advisory and goes stale on its own as Expo publishes patches; this step
+      # reports whether the app can actually be built. When both are failing, the
+      # second is the one worth seeing, and a failed step stops the job.
+      - name: Bundle for release
+        working-directory: apps/mobile
+        run: npx expo export --platform android --output-dir /tmp/fitai-bundle-check
+
       # EAS runs this during a build, which is a slow and expensive place to
       # first learn that a config is wrong. Running it here surfaces the same
       # problems in a minute instead of twenty.

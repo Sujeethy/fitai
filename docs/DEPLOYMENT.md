@@ -9,11 +9,11 @@ changes need a rebuild.**
 
 ## Three kinds of change
 
-| What changed | What you do | Time |
-|---|---|---|
+| What changed                                                                 | What you do                                               | Time            |
+| ---------------------------------------------------------------------------- | --------------------------------------------------------- | --------------- |
 | **JavaScript / TypeScript** — screens, logic, styles, queries (≈95% of work) | Fast Refresh in dev, or `eas update` for an installed app | ~1 sec / ~1 min |
-| **Native** — new native library, permissions, icon, SDK upgrade | Rebuild the APK and reinstall | ~10–20 min |
-| **Database schema** | Nothing — migrations run on app start | — |
+| **Native** — new native library, permissions, icon, SDK upgrade              | Rebuild the APK and reinstall                             | ~10–20 min      |
+| **Database schema**                                                          | Nothing — migrations run on app start                     | —               |
 
 ---
 
@@ -57,7 +57,7 @@ when you're happy with it.
 
 ## 3. When you need a full rebuild
 
-Rebuild and reinstall when you change something *native*:
+Rebuild and reinstall when you change something _native_:
 
 - Adding a package with native code — `react-native-health-connect` (Phase 8) is the
   main one in this plan
@@ -70,10 +70,10 @@ pure JavaScript, rebuild. Otherwise an OTA update is enough.
 
 Two ways to build:
 
-| Command | Where | Cost |
-|---|---|---|
-| `eas build -p android --profile preview` | Expo's cloud | Free monthly quota; no Android Studio needed |
-| `npx expo run:android` | Your laptop | Unlimited and free; needs Android Studio + JDK |
+| Command                                  | Where        | Cost                                           |
+| ---------------------------------------- | ------------ | ---------------------------------------------- |
+| `eas build -p android --profile preview` | Expo's cloud | Free monthly quota; no Android Studio needed   |
+| `npx expo run:android`                   | Your laptop  | Unlimited and free; needs Android Studio + JDK |
 
 ---
 
@@ -95,11 +95,40 @@ receive the update.
 
 The workflows themselves are a Phase 0 deliverable. The design:
 
-| Job | Trigger | Why |
-|---|---|---|
-| **Checks** — typecheck, lint, test | Every push and PR | Free (public repo), and catches mistakes before they reach your phone |
-| **`eas update`** | Push to `main`, after checks pass | Fast and effectively unlimited |
-| **`eas build`** | Manual (`workflow_dispatch`) or a `v*` tag | Slow, and the free tier has a monthly build quota — never automate this |
+| Job                                                                         | Trigger                                        | Why                                                                                         |
+| --------------------------------------------------------------------------- | ---------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| **Checks** — typecheck, lint, test, `expo-doctor`, release bundle           | Every push and PR                              | Free (public repo), and catches mistakes before they reach your phone                       |
+| **Native build dry run** — `expo prebuild` + `gradlew :app:assembleRelease` | Before every `eas build`, in the same workflow | Free, and it is the same work EAS does — so a broken build costs a runner, not a quota slot |
+| **`eas update`**                                                            | Push to `main`, after checks pass              | Fast and effectively unlimited                                                              |
+| **`eas build`**                                                             | Manual (`workflow_dispatch`) or a `v*` tag     | Slow, and the free tier has a monthly build quota — never automate this                     |
+
+### Knowing a build works before spending one
+
+The free tier's build quota is small enough that a failed build is expensive, and EAS
+fails _late_ — the Sentry source-map upload that broke the 0.2.0 build ran after twelve
+minutes of successful compilation. Two checks close that gap, in increasing cost:
+
+1. **`expo export --platform android`** (CI, ~2 min). Produces the same production
+   Metro bundle as `:app:createBundleReleaseJsAndAssets`. Catches import errors,
+   missing Babel transforms, anything that only resolves in dev.
+2. **`expo prebuild` + `gradlew :app:assembleRelease`** (`build.yml`, ~30 min, free on
+   a GitHub runner). This _is_ the EAS build, minus signing and minus three of the four
+   ABIs. `eas build` runs only if it passes.
+
+The APK the dry run produces is discarded on purpose. It is signed with the template
+debug keystore, so Android sees a different app and refuses to install it over the
+EAS-signed one — you would have to uninstall first, and that deletes the database and
+every workout in it. The dry run answers "would the build succeed", nothing more.
+
+What neither check catches: EAS credentials, the release signing key, and anything that
+only appears on a real device at runtime.
+
+**Sentry source maps are off by default.** `eas.json`'s `base` profile sets
+`SENTRY_DISABLE_AUTO_UPLOAD` and `SENTRY_DISABLE_NATIVE_DEBUG_UPLOAD`, because the
+`@sentry/react-native/expo` plugin otherwise runs `sentry-cli` with no org, project, or
+auth token and exits 1 — failing the build over telemetry the app does not depend on.
+To enable: add `SENTRY_ORG`, `SENTRY_PROJECT` and `SENTRY_AUTH_TOKEN` as EAS secrets
+(`eas env:create`), then remove those two flags.
 
 **Do not auto-build on every push.** It would exhaust the EAS build quota within days
 for no benefit, since native changes are rare. Updates are the cheap thing; builds are
@@ -150,13 +179,13 @@ broken:
 
 Worth enforcing this way:
 
-| Rule | How |
-|---|---|
-| Only the repository imports the database | `no-restricted-imports` (above) |
-| No default exports | `import/no-default-export` |
-| No `../../../` imports | `no-restricted-imports` with a relative-path pattern |
-| Query keys come from `queryKeys.ts` | Custom rule or a `no-restricted-syntax` check |
-| Schema and migrations agree | `drizzle-kit check` as a CI step |
+| Rule                                     | How                                                  |
+| ---------------------------------------- | ---------------------------------------------------- |
+| Only the repository imports the database | `no-restricted-imports` (above)                      |
+| No default exports                       | `import/no-default-export`                           |
+| No `../../../` imports                   | `no-restricted-imports` with a relative-path pattern |
+| Query keys come from `queryKeys.ts`      | Custom rule or a `no-restricted-syntax` check        |
+| Schema and migrations agree              | `drizzle-kit check` as a CI step                     |
 
 Six months from now — or with an LLM making changes — these hold on their own instead
 of depending on someone having read the docs.
@@ -214,13 +243,13 @@ not for changing what the app fundamentally does.)
 
 ## Summary
 
-| Situation | Command |
-|---|---|
-| Developing | `pnpm dev` |
-| Ship a JS change to your installed app | `git push` to `main` — CI runs `eas update` |
-| Added a native library | Tag `v*` or run the build workflow manually, then reinstall |
-| Ship the backend (Phase 9) | `git push` |
-| Ship to Play Store (Phase 10) | `eas build --profile production && eas submit -p android` |
+| Situation                              | Command                                                     |
+| -------------------------------------- | ----------------------------------------------------------- |
+| Developing                             | `pnpm dev`                                                  |
+| Ship a JS change to your installed app | `git push` to `main` — CI runs `eas update`                 |
+| Added a native library                 | Tag `v*` or run the build workflow manually, then reinstall |
+| Ship the backend (Phase 9)             | `git push`                                                  |
+| Ship to Play Store (Phase 10)          | `eas build --profile production && eas submit -p android`   |
 
 Once the workflows exist, `git push` is the everyday action — CI checks it and
 publishes the update. Building is the deliberate, occasional one.
