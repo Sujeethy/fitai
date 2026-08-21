@@ -48,10 +48,10 @@ export default function SessionScreen() {
           )
         }
       >
-        {session.isPending ? <Text className="text-neutral-500">Loading…</Text> : null}
+        {session.isPending ? <Text className="text-textMuted">Loading…</Text> : null}
 
         {session.error ? (
-          <Text className="text-red-400">{session.error.message}</Text>
+          <Text className="text-danger">{session.error.message}</Text>
         ) : null}
 
         {detail && detail.exercises.length === 0 ? (

@@ -19,9 +19,9 @@ export default function BackupScreen() {
       <Screen title="Backup & Restore" subtitle="Your data lives on this phone">
         <BackupCard />
 
-        <View className="rounded-3xl border border-neutral-800/70 bg-neutral-900 p-4">
-          <Text className="text-base font-semibold text-white">Restore</Text>
-          <Text className="mt-1 text-sm text-neutral-500">
+        <View className="rounded-3xl border border-border/70 bg-surfaceRaised p-4">
+          <Text className="text-base font-semibold text-textPrimary">Restore</Text>
+          <Text className="mt-1 text-sm text-textMuted">
             Go back to an earlier backup. You'll see what's in it before anything changes.
           </Text>
           <View className="mt-4">
@@ -35,9 +35,9 @@ export default function BackupScreen() {
           </View>
         </View>
 
-        <View className="rounded-3xl border border-neutral-800/70 bg-neutral-900 p-4">
-          <Text className="text-base font-semibold text-white">How backups work</Text>
-          <Text className="mt-2 text-sm leading-5 text-neutral-400">
+        <View className="rounded-3xl border border-border/70 bg-surfaceRaised p-4">
+          <Text className="text-base font-semibold text-textPrimary">How backups work</Text>
+          <Text className="mt-2 text-sm leading-5 text-textDim">
             A backup is taken after every session and once a day. The last 7 days plus
             4 weekly ones are kept — older ones are removed automatically.
             {'\n\n'}

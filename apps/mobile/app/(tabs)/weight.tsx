@@ -27,19 +27,19 @@ export default function WeightScreen() {
       ) : null}
 
       {entries.length > 0 ? (
-        <View className="rounded-3xl border border-neutral-800/70 bg-neutral-900 p-4">
-          <Text className="mb-2 text-xs uppercase tracking-wide text-neutral-500">History</Text>
+        <View className="rounded-3xl border border-border/70 bg-surfaceRaised p-4">
+          <Text className="mb-2 text-xs uppercase tracking-wide text-textMuted">History</Text>
           {entries.slice(0, 30).map((w) => (
             <View
               key={w.id}
-              className="flex-row items-center justify-between border-t border-neutral-800 py-2.5"
+              className="flex-row items-center justify-between border-t border-border py-2.5"
             >
-              <Text className="text-neutral-300">{w.date}</Text>
+              <Text className="text-textSecondary">{w.date}</Text>
               <View className="flex-row items-center gap-3">
                 {w.source !== 'manual' ? (
-                  <Text className="text-xs text-neutral-600">{w.source.replace('_', ' ')}</Text>
+                  <Text className="text-xs text-textFaint">{w.source.replace('_', ' ')}</Text>
                 ) : null}
-                <Text className="font-medium text-white">{formatKg(w.weightKg)} kg</Text>
+                <Text className="font-medium text-textPrimary">{formatKg(w.weightKg)} kg</Text>
               </View>
             </View>
           ))}

@@ -7,6 +7,7 @@ import { Screen } from '@/shared/components/Screen';
 import { Button } from '@/shared/components/Button';
 import { EmptyState } from '@/shared/components/EmptyState';
 import { AccountButton } from '@/shared/components/AccountButton';
+import { colors } from '@/shared/theme/colors';
 import { useSessions, useStartRoutineSession, useStartSession, useTodayPlan } from '@/data/useRepository';
 
 /**
@@ -42,12 +43,12 @@ export default function TodayScreen() {
   return (
     <Screen title="fitai" subtitle={date} headerRight={<AccountButton />}>
       {active ? (
-        <Animated.View entering={FadeInDown.springify().damping(18)} className="rounded-3xl border border-emerald-500/30 bg-emerald-500/10 p-4">
+        <Animated.View entering={FadeInDown.springify().damping(18)} className="rounded-3xl border border-accent/30 bg-accent/10 p-4">
           <View className="flex-row items-center gap-2">
-            <MaterialCommunityIcons name="progress-clock" size={18} color="#34d399" />
-            <Text className="text-base font-semibold text-emerald-400">Session in progress</Text>
+            <MaterialCommunityIcons name="progress-clock" size={18} color={colors.accentMuted} />
+            <Text className="text-base font-semibold text-accentMuted">Session in progress</Text>
           </View>
-          <Text className="mt-1 text-sm text-neutral-400">Started {active.startedAt.slice(11, 16)}</Text>
+          <Text className="mt-1 text-sm text-textDim">Started {active.startedAt.slice(11, 16)}</Text>
           <View className="mt-4">
             <Button
               label="Continue session"
@@ -76,16 +77,16 @@ export default function TodayScreen() {
             hint="Add exercises as you go"
           />
           {lastFinished ? (
-            <Text className="text-center text-xs text-neutral-600">
+            <Text className="text-center text-xs text-textFaint">
               Last session {lastFinished.date}
             </Text>
           ) : null}
         </View>
       )}
 
-      {start.error ? <Text className="text-sm text-red-400">{start.error.message}</Text> : null}
+      {start.error ? <Text className="text-sm text-danger">{start.error.message}</Text> : null}
       {startRoutine.error ? (
-        <Text className="text-sm text-red-400">{startRoutine.error.message}</Text>
+        <Text className="text-sm text-danger">{startRoutine.error.message}</Text>
       ) : null}
 
       {all.length === 0 && !sessions.isPending ? (
@@ -96,15 +97,15 @@ export default function TodayScreen() {
       ) : null}
 
       {all.length > 0 ? (
-        <View className="rounded-3xl border border-neutral-800/70 bg-neutral-900 p-4">
-          <Text className="mb-2 text-xs uppercase tracking-wide text-neutral-500">Recent</Text>
+        <View className="rounded-3xl border border-border/70 bg-surfaceRaised p-4">
+          <Text className="mb-2 text-xs uppercase tracking-wide text-textMuted">Recent</Text>
           {all.slice(0, 6).map((s) => (
             <View
               key={s.id}
-              className="flex-row items-center justify-between border-t border-neutral-800 py-2.5"
+              className="flex-row items-center justify-between border-t border-border py-2.5"
             >
-              <Text className="text-neutral-300">{s.date}</Text>
-              <Text className="text-xs text-neutral-600">
+              <Text className="text-textSecondary">{s.date}</Text>
+              <Text className="text-xs text-textFaint">
                 {s.finishedAt ? s.origin : 'in progress'}
               </Text>
             </View>
@@ -131,13 +132,13 @@ function RoutineDayCard({
     return (
       <Animated.View
         entering={FadeInDown.springify().damping(18)}
-        className="rounded-3xl border border-neutral-800/70 bg-neutral-900 p-4"
+        className="rounded-3xl border border-border/70 bg-surfaceRaised p-4"
       >
         <View className="flex-row items-center gap-2">
-          <MaterialCommunityIcons name="weather-night" size={18} color="#a3a3a3" />
-          <Text className="text-base font-semibold text-neutral-300">Rest day</Text>
+          <MaterialCommunityIcons name="weather-night" size={18} color={colors.textDim} />
+          <Text className="text-base font-semibold text-textSecondary">Rest day</Text>
         </View>
-        <Text className="mt-1 text-sm text-neutral-500">Nothing planned — recovery is the work today.</Text>
+        <Text className="mt-1 text-sm text-textMuted">Nothing planned — recovery is the work today.</Text>
         <View className="mt-4">
           <Button
             label="Log body weight"
@@ -154,14 +155,14 @@ function RoutineDayCard({
   return (
     <Animated.View
       entering={FadeInDown.springify().damping(18)}
-      className="rounded-3xl border border-emerald-500/30 bg-emerald-500/10 p-4"
+      className="rounded-3xl border border-accent/30 bg-accent/10 p-4"
     >
-      <Text className="text-base font-semibold text-emerald-400">{plan.day.name}</Text>
-      <Text className="mt-1 text-sm text-neutral-400">
+      <Text className="text-base font-semibold text-accentMuted">{plan.day.name}</Text>
+      <Text className="mt-1 text-sm text-textDim">
         {plan.day.exercises.length} exercises · {totalSets} sets
       </Text>
       {plan.day.warmupNote ? (
-        <Text className="mt-2 text-xs text-neutral-500">{plan.day.warmupNote}</Text>
+        <Text className="mt-2 text-xs text-textMuted">{plan.day.warmupNote}</Text>
       ) : null}
       <View className="mt-4">
         <Button label="Start" icon="play" variant="primary" block disabled={pending} onPress={onStart} />

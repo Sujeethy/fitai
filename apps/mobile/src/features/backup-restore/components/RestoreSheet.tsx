@@ -55,16 +55,16 @@ export function RestoreSheet({ snapshots, onClose }: Props) {
     <Modal visible animationType="slide" transparent onRequestClose={onClose}>
       <Pressable className="flex-1 bg-black/60" onPress={onClose} />
       <View
-        className="max-h-[80%] rounded-t-3xl bg-neutral-900 px-5 pt-5"
+        className="max-h-[80%] rounded-t-3xl bg-surfaceRaised px-5 pt-5"
         style={{ paddingBottom: insets.bottom + 16 }}
       >
-        <Text className="text-xl font-semibold text-white">
+        <Text className="text-xl font-semibold text-textPrimary">
           {selected ? 'Restore this backup?' : 'Restore a backup'}
         </Text>
 
         {!selected ? (
           <>
-            <Text className="mt-1 text-sm text-neutral-500">
+            <Text className="mt-1 text-sm text-textMuted">
               Pick one to see what it contains.
             </Text>
             <ScrollView className="mt-4">
@@ -73,26 +73,26 @@ export function RestoreSheet({ snapshots, onClose }: Props) {
                   <Pressable
                     key={s.name}
                     onPress={() => choose(s)}
-                    className="min-h-[56px] flex-row items-center justify-between rounded-xl bg-neutral-800 px-4 py-3 active:bg-neutral-700"
+                    className="min-h-[56px] flex-row items-center justify-between rounded-xl bg-surfaceOverlay px-4 py-3 active:bg-surfaceOverlayStrong"
                   >
-                    <Text className="text-white">
+                    <Text className="text-textPrimary">
                       {s.takenAt.slice(0, 16).replace('T', ' ')}
                     </Text>
-                    <Text className="text-xs text-neutral-500">
+                    <Text className="text-xs text-textMuted">
                       {(s.sizeBytes / 1024).toFixed(0)} KB
                     </Text>
                   </Pressable>
                 ))}
                 {snapshots.length === 0 ? (
-                  <Text className="py-6 text-center text-neutral-500">No backups yet.</Text>
+                  <Text className="py-6 text-center text-textMuted">No backups yet.</Text>
                 ) : null}
               </View>
             </ScrollView>
           </>
         ) : (
           <View className="mt-4 gap-3">
-            <View className="rounded-xl bg-neutral-800 p-4">
-              <Text className="text-sm text-neutral-400">
+            <View className="rounded-xl bg-surfaceOverlay p-4">
+              <Text className="text-sm text-textDim">
                 {selected.takenAt.slice(0, 16).replace('T', ' ')}
               </Text>
               <View className="mt-3 gap-1.5">
@@ -103,8 +103,8 @@ export function RestoreSheet({ snapshots, onClose }: Props) {
               </View>
             </View>
 
-            <View className="rounded-xl bg-amber-500/10 p-3">
-              <Text className="text-sm text-amber-300">
+            <View className="rounded-xl bg-warning/10 p-3">
+              <Text className="text-sm text-warningMuted">
                 Everything logged after this point is replaced. A backup of your current
                 data is taken first, so this can be undone.
               </Text>
@@ -128,7 +128,7 @@ export function RestoreSheet({ snapshots, onClose }: Props) {
           </View>
         )}
 
-        {error ? <Text className="mt-2 text-sm text-red-400">{error}</Text> : null}
+        {error ? <Text className="mt-2 text-sm text-danger">{error}</Text> : null}
 
         {!selected ? (
           <View className="mt-3">
@@ -143,8 +143,8 @@ export function RestoreSheet({ snapshots, onClose }: Props) {
 function Row({ label, value }: { label: string; value: string }) {
   return (
     <View className="flex-row items-center justify-between">
-      <Text className="text-neutral-400">{label}</Text>
-      <Text className="font-medium text-white">{value}</Text>
+      <Text className="text-textDim">{label}</Text>
+      <Text className="font-medium text-textPrimary">{value}</Text>
     </View>
   );
 }

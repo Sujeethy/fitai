@@ -32,18 +32,18 @@ function DatabaseGate({ children }: { children: React.ReactNode }) {
 
   if (state.status === 'pending') {
     return (
-      <View className="flex-1 items-center justify-center bg-neutral-950">
-        <Text className="text-neutral-400">Opening your training log…</Text>
+      <View className="flex-1 items-center justify-center bg-surface">
+        <Text className="text-textDim">Opening your training log…</Text>
       </View>
     );
   }
 
   if (state.status === 'error') {
     return (
-      <View className="flex-1 items-center justify-center gap-2 bg-neutral-950 px-8">
-        <Text className="text-lg font-semibold text-red-400">Could not open the database</Text>
-        <Text className="text-center text-neutral-400">{state.message}</Text>
-        <Text className="mt-4 text-center text-xs text-neutral-600">
+      <View className="flex-1 items-center justify-center gap-2 bg-surface px-8">
+        <Text className="text-lg font-semibold text-danger">Could not open the database</Text>
+        <Text className="text-center text-textDim">{state.message}</Text>
+        <Text className="mt-4 text-center text-xs text-textFaint">
           Your data is still on the device. Restore from a backup in Settings if this persists.
         </Text>
       </View>

@@ -67,11 +67,11 @@ export function SwapSheet({ sessionId, planned, onClose }: Props) {
     <Modal visible animationType="slide" transparent onRequestClose={onClose}>
       <Pressable className="flex-1 bg-black/60" onPress={onClose} />
       <View
-        className="max-h-[80%] rounded-t-3xl bg-neutral-900 px-5 pt-5"
+        className="max-h-[80%] rounded-t-3xl bg-surfaceRaised px-5 pt-5"
         style={{ paddingBottom: insets.bottom + 16 }}
       >
-        <Text className="text-xl font-semibold text-white">Swap {planned.name}</Text>
-        <Text className="mt-1 text-sm text-neutral-500">
+        <Text className="text-xl font-semibold text-textPrimary">Swap {planned.name}</Text>
+        <Text className="mt-1 text-sm text-textMuted">
           Applies to today only — your routine is unchanged.
         </Text>
 
@@ -81,12 +81,12 @@ export function SwapSheet({ sessionId, planned, onClose }: Props) {
               key={r.value}
               onPress={() => setReason(r.value)}
               className={`rounded-full px-4 py-2 ${
-                reason === r.value ? 'bg-emerald-500' : 'bg-neutral-800'
+                reason === r.value ? 'bg-accent' : 'bg-surfaceOverlay'
               }`}
             >
               <Text
                 className={`text-sm font-medium ${
-                  reason === r.value ? 'text-neutral-950' : 'text-neutral-300'
+                  reason === r.value ? 'text-textInverse' : 'text-textSecondary'
                 }`}
               >
                 {r.label}
@@ -114,7 +114,7 @@ export function SwapSheet({ sessionId, planned, onClose }: Props) {
         </ScrollView>
 
         {replace.error ? (
-          <Text className="mt-2 text-sm text-red-400">{replace.error.message}</Text>
+          <Text className="mt-2 text-sm text-danger">{replace.error.message}</Text>
         ) : null}
 
         <View className="mt-3">
@@ -128,7 +128,7 @@ export function SwapSheet({ sessionId, planned, onClose }: Props) {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <View className="mb-5">
-      <Text className="mb-2 text-xs uppercase tracking-wide text-neutral-500">{title}</Text>
+      <Text className="mb-2 text-xs uppercase tracking-wide text-textMuted">{title}</Text>
       <View className="gap-1">{children}</View>
     </View>
   );
@@ -138,10 +138,10 @@ function Option({ exercise, onPress }: { exercise: Exercise; onPress: () => void
   return (
     <Pressable
       onPress={onPress}
-      className="min-h-[52px] flex-row items-center justify-between rounded-xl bg-neutral-800 px-4 py-3 active:bg-neutral-700"
+      className="min-h-[52px] flex-row items-center justify-between rounded-xl bg-surfaceOverlay px-4 py-3 active:bg-surfaceOverlayStrong"
     >
-      <Text className="text-white">{exercise.name}</Text>
-      <Text className="text-xs text-neutral-500">{exercise.equipment}</Text>
+      <Text className="text-textPrimary">{exercise.name}</Text>
+      <Text className="text-xs text-textMuted">{exercise.equipment}</Text>
     </Pressable>
   );
 }

@@ -6,6 +6,7 @@ import { formatKg } from '@/shared/lib/format';
 import { todayIso } from '@fitai/core';
 import { Button } from '@/shared/components/Button';
 import { Stepper } from '@/shared/components/Stepper';
+import { colors } from '@/shared/theme/colors';
 import { useBodyWeights, useLogBodyWeight } from '@/data/useRepository';
 
 /**
@@ -33,15 +34,15 @@ export function LogWeightCard() {
   const current = value ?? latest?.weightKg ?? 75;
 
   return (
-    <Animated.View entering={FadeIn.duration(220)} className="rounded-3xl border border-neutral-800/70 bg-neutral-900 p-4">
+    <Animated.View entering={FadeIn.duration(220)} className="rounded-3xl border border-border/70 bg-surfaceRaised p-4">
       <View className="flex-row items-center justify-between">
         <View className="flex-row items-center gap-2">
-          <MaterialCommunityIcons name="scale-bathroom" size={18} color="#34d399" />
-          <Text className="text-base font-semibold text-white">
+          <MaterialCommunityIcons name="scale-bathroom" size={18} color={colors.accentMuted} />
+          <Text className="text-base font-semibold text-textPrimary">
             {alreadyToday ? "Update today's weight" : "Log today's weight"}
           </Text>
         </View>
-        <Text className="text-xs text-neutral-500">{today}</Text>
+        <Text className="text-xs text-textMuted">{today}</Text>
       </View>
 
       <View className="mt-4">
@@ -74,7 +75,7 @@ export function LogWeightCard() {
         />
       </View>
 
-      {log.error ? <Text className="mt-2 text-sm text-red-400">{log.error.message}</Text> : null}
+      {log.error ? <Text className="mt-2 text-sm text-danger">{log.error.message}</Text> : null}
     </Animated.View>
   );
 }

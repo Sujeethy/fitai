@@ -15,6 +15,7 @@ module.exports = {
         surface: '#0a0a0a',
         surfaceRaised: '#171717',
         surfaceOverlay: '#262626',
+        surfaceOverlayStrong: '#404040',
 
         border: '#262626',
         borderMuted: '#171717',
@@ -22,16 +23,20 @@ module.exports = {
 
         accent: '#10b981',
         accentMuted: '#34d399',
+        accentStrong: '#059669',
         success: '#10b981',
         warning: '#f59e0b',
         warningMuted: '#fcd34d',
         danger: '#f87171',
+        dangerMuted: '#fca5a5',
         dangerStrong: '#ef4444',
 
         textPrimary: '#ffffff',
         textSecondary: '#d4d4d4',
+        textDim: '#a3a3a3',
         textMuted: '#737373',
         textFaint: '#525252',
+        textFaintest: '#404040',
         textInverse: '#0a0a0a',
       },
     },

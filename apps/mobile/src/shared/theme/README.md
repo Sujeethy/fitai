@@ -17,18 +17,25 @@ this file directly.
 |---|---|
 | `surface` | App background |
 | `surfaceRaised` | Card / screen-section background |
-| `surfaceOverlay` | Inputs, secondary button fill, pressed states |
+| `surfaceOverlay` | Inputs, secondary button fill |
+| `surfaceOverlayStrong` | Pressed state of `surfaceOverlay` — `active:bg-surfaceOverlayStrong` |
 | `border` / `borderMuted` / `borderStrong` | Hairlines, from subtle to visible |
 | `accent` / `accentMuted` | The one saturated color — primary actions, active state |
+| `accentStrong` | Pressed state of `accent` |
 | `success` | Completed sets, positive states. Same value as `accent` today — kept as a separate token because NEXT.md §2 reserves green for *completed* and the accent for *actionable*, which will diverge once the palette gets a real pass |
 | `warning` / `warningMuted` | Caution states — e.g. "you're behind on today's plan" |
-| `danger` / `dangerStrong` | Destructive actions, errors |
-| `textPrimary` / `textSecondary` / `textMuted` / `textFaint` | Type hierarchy, high to low emphasis |
+| `danger` / `dangerMuted` / `dangerStrong` | Destructive actions, errors, from subtle to strong |
+| `textPrimary` / `textSecondary` / `textDim` / `textMuted` / `textFaint` / `textFaintest` | Type hierarchy, high to low emphasis |
 | `textInverse` | Text on an accent-colored background |
 
-## What's converted so far
+## What's converted
 
-`Screen`, `EmptyState`, `Button`, `Stepper`, `AccountButton` — the components
-every screen composes from. The rest of the app still hardcodes
-`bg-neutral-900` etc.; converting those is the restyle pass in NEXT.md §2,
-deliberately left for after this token layer exists, so it happens once.
+The whole app — every screen and feature component uses the semantic
+classes (`bg-surface`, `text-textMuted`, `border-border`, …) instead of raw
+Tailwind shades. Restyling the palette from here is an edit to `colors.ts`
+and `tailwind.config.js`, not a find-and-replace across ~20 files.
+
+What restyling still means, per NEXT.md §2: a type scale that gives weight
+numbers real prominence, cards with more elevation than a border, and a
+progress ring/bar treatment — visual work the token layer enables but
+doesn't do by itself.

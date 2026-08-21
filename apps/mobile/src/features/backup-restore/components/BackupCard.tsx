@@ -27,10 +27,10 @@ export function BackupCard() {
     : null;
 
   return (
-    <View className="rounded-3xl border border-neutral-800/70 bg-neutral-900 p-4">
-      <Text className="text-base font-semibold text-white">Backup</Text>
+    <View className="rounded-3xl border border-border/70 bg-surfaceRaised p-4">
+      <Text className="text-base font-semibold text-textPrimary">Backup</Text>
 
-      <Text className="mt-1 text-sm text-neutral-500">
+      <Text className="mt-1 text-sm text-textMuted">
         {latest ? `Last backup ${ago(latest.takenAt)}` : 'No backup yet'}
         {snapshots.data && snapshots.data.length > 0
           ? ` · ${snapshots.data.length} kept`
@@ -39,8 +39,8 @@ export function BackupCard() {
 
       {/* The phone is the only copy until a folder is chosen — say so plainly. */}
       {!hasFolder ? (
-        <View className="mt-3 rounded-xl bg-amber-500/10 p-3">
-          <Text className="text-sm text-amber-300">
+        <View className="mt-3 rounded-xl bg-warning/10 p-3">
+          <Text className="text-sm text-warningMuted">
             Backups are only on this phone. Choose a Google Drive folder so they survive
             losing it.
           </Text>
@@ -48,16 +48,16 @@ export function BackupCard() {
       ) : null}
 
       {folderBroken ? (
-        <View className="mt-3 rounded-xl bg-red-500/10 p-3">
-          <Text className="text-sm text-red-300">
+        <View className="mt-3 rounded-xl bg-dangerStrong/10 p-3">
+          <Text className="text-sm text-dangerMuted">
             The backup folder is no longer accessible. Choose it again.
           </Text>
         </View>
       ) : null}
 
       {staleDays !== null && staleDays >= 7 ? (
-        <View className="mt-3 rounded-xl bg-amber-500/10 p-3">
-          <Text className="text-sm text-amber-300">
+        <View className="mt-3 rounded-xl bg-warning/10 p-3">
+          <Text className="text-sm text-warningMuted">
             Your last backup is {staleDays} days old.
           </Text>
         </View>
@@ -81,7 +81,7 @@ export function BackupCard() {
       </View>
 
       {backupNow.data ? (
-        <Text className="mt-2 text-sm text-neutral-500">
+        <Text className="mt-2 text-sm text-textMuted">
           {backupNow.data.exported
             ? 'Saved to this phone and your folder.'
             : hasFolder
@@ -91,7 +91,7 @@ export function BackupCard() {
       ) : null}
 
       {backupNow.error ? (
-        <Text className="mt-2 text-sm text-red-400">{String(backupNow.error)}</Text>
+        <Text className="mt-2 text-sm text-danger">{String(backupNow.error)}</Text>
       ) : null}
     </View>
   );

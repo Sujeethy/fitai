@@ -6,6 +6,7 @@ import type { RoutineSetPlan, WorkoutSet } from '@fitai/contract';
 import { formatKg } from '@/shared/lib/format';
 import { Button } from '@/shared/components/Button';
 import { Stepper } from '@/shared/components/Stepper';
+import { colors } from '@/shared/theme/colors';
 
 const SET_TYPE_LABEL: Record<RoutineSetPlan['setType'], string> = {
   warmup: 'Warm-up',
@@ -41,7 +42,7 @@ export function PlannedSetRow({ planned, logged, incrementKg, pending, onLog }: 
   return (
     <Animated.View
       layout={LinearTransition.springify().damping(20)}
-      className="border-t border-neutral-800/80 py-3"
+      className="border-t border-border/80 py-3"
     >
       <Pressable
         disabled={Boolean(logged)}
@@ -49,34 +50,34 @@ export function PlannedSetRow({ planned, logged, incrementKg, pending, onLog }: 
         className="flex-row items-center justify-between"
       >
         <View className="flex-1 flex-row items-center gap-3">
-          <View className="h-6 w-6 items-center justify-center rounded-md bg-neutral-800">
+          <View className="h-6 w-6 items-center justify-center rounded-md bg-surfaceOverlay">
             {logged ? (
-              <MaterialCommunityIcons name="check" size={14} color="#34d399" />
+              <MaterialCommunityIcons name="check" size={14} color={colors.accentMuted} />
             ) : (
-              <Text className="text-[10px] font-semibold text-neutral-500">{SET_TYPE_LABEL[planned.setType][0]}</Text>
+              <Text className="text-[10px] font-semibold text-textMuted">{SET_TYPE_LABEL[planned.setType][0]}</Text>
             )}
           </View>
 
           <View>
-            <Text className="text-xs uppercase tracking-wide text-neutral-500">
+            <Text className="text-xs uppercase tracking-wide text-textMuted">
               {SET_TYPE_LABEL[planned.setType]}
             </Text>
-            <Text className={logged ? 'text-neutral-500 line-through' : 'text-base text-white'}>
+            <Text className={logged ? 'text-textMuted line-through' : 'text-base text-textPrimary'}>
               {targetLabel}
             </Text>
             {logged ? (
-              <Text className="text-sm text-emerald-400">
+              <Text className="text-sm text-accentMuted">
                 {formatKg(logged.weightKg)} kg × {logged.reps}
               </Text>
             ) : null}
             {planned.targetNote ? (
-              <Text className="text-xs text-neutral-600">{planned.targetNote}</Text>
+              <Text className="text-xs text-textFaint">{planned.targetNote}</Text>
             ) : null}
           </View>
         </View>
 
         {logged ? null : planned.restSeconds ? (
-          <Text className="text-xs text-neutral-600">rest {planned.restSeconds}s</Text>
+          <Text className="text-xs text-textFaint">rest {planned.restSeconds}s</Text>
         ) : null}
       </Pressable>
 

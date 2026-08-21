@@ -81,25 +81,27 @@ often enough to justify in-app editing.
 
 ## 2. Visual design
 
-> **Token layer built.** `apps/mobile/src/shared/theme/colors.ts` defines
-> semantic tokens (`surface`, `surfaceRaised`, `surfaceOverlay`, `border`,
+> **Token layer built, and every screen converted.** `apps/mobile/src/shared/theme/colors.ts`
+> defines semantic tokens (`surface`, `surfaceRaised`, `surfaceOverlay`, `border`,
 > `accent`, `success`, `warning`, `danger`, `textPrimary`, `textSecondary`,
-> `textMuted`, `textFaint`, `textInverse`, …), mirrored as Tailwind utility
-> classes in `apps/mobile/tailwind.config.js` (the two are kept in sync by
-> hand — Node loads the Tailwind config directly, so it can't import the TS
-> module). `Screen`, `EmptyState`, `Button`, `Stepper`, and `AccountButton` —
-> the components every screen composes from — are converted. The rest of the
-> app (~20 screens) still hardcodes `bg-neutral-900` / `text-emerald-400`
-> directly; that conversion is the restyle pass below, still to do.
+> `textMuted`, `textFaint`, `textInverse`, plus pressed-state and rare-variant
+> tokens like `accentStrong`, `dangerMuted`, `textDim`, `textFaintest`),
+> mirrored as Tailwind utility classes in `apps/mobile/tailwind.config.js`
+> (kept in sync by hand — Node loads the Tailwind config directly, so it
+> can't import the TS module). The whole app — every feature component and
+> screen, not just the shared ones — uses semantic classes now; nothing
+> hardcodes `bg-neutral-900` or `text-emerald-400` anymore. What's below is
+> the visual-design work the token layer *enables* but doesn't do on its
+> own — layout, type scale, and elevation, not just color naming.
 
-The current look is placeholder: emerald on near-black, one accent, no scale.
-It needs to read like a real fitness app.
+The current look still reads as a placeholder even with the tokens in place:
+emerald on near-black, one accent, no real type or elevation scale. It needs
+to read like a real fitness app.
 
-Now that the token layer exists, the restyle pass is: audit each screen
-folder, swap hardcoded Tailwind colors for the semantic classes
-(`bg-surface`, `text-textMuted`, `border-border`, …), and use the Design
-plugin's `design-critique` skill to check the result actually reads as
-intentional rather than just find-and-replaced.
+The restyle pass from here is layout and hierarchy, not color plumbing:
+tune the token *values* in one place if the palette itself needs work, then
+use the Design plugin's `design-critique` skill to check the result reads as
+intentional rather than just competently colored.
 
 Direction worth taking from apps in this category (Strong, Hevy, Whoop):
 
@@ -145,19 +147,20 @@ competing with the data.
 
 ## 4. Housekeeping
 
-The user asked that nothing stale be left behind. Audit before the next release:
+The user asked that nothing stale be left behind. Audited — all done:
 
-- **`chat_threads` / `chat_messages`** exist in the schema but nothing uses them
-  until Phase 6. Either keep with a comment saying so, or drop and re-add — do
-  not leave them unexplained.
-- **`session_planning` feature folder** holds only `AddExerciseSheet`. Once
-  routines land, it either grows into the routine picker or the sheet moves to
-  `workout-logging`.
-- **`Screen`, `EmptyState`** components predate the theme layer and will need
-  rewriting with tokens.
-- **`docs/adr/0004`** says "no fixed program" is a settled decision. That is now
-  wrong — it needs superseding with an ADR recording the routine-first model.
-- **PLAN.md §7 and §19** both state "no fixed program". Same correction.
+- **`chat_threads` / `chat_messages`** — kept, with a comment on the schema
+  explaining they're reserved for Phase 6. Nothing left unexplained.
+- **`session_planning` feature folder** — its README documents the
+  routine-first model and the fold-in/grow decision explicitly (§ "Growth
+  note"), so a future session doesn't have to re-derive it.
+- **`Screen`, `EmptyState`** — converted to theme tokens along with `Button`,
+  `Stepper`, `AccountButton` when the token layer landed (§2).
+- **`docs/adr/0004`** — turned out to be about routine *versioning*, not the
+  "no fixed program" claim, so it didn't need superseding. ADR 0007 already
+  covers the routine-first correction.
+- **PLAN.md §7 and §19** — corrected when the token layer / routine-first
+  docs were updated.
 
 ---
 

@@ -4,6 +4,7 @@ import Animated, { FadeIn, LinearTransition } from 'react-native-reanimated';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import type { RoutineDayPlan, SetType } from '@fitai/contract';
 import { formatWeight } from '@/shared/lib/format';
+import { colors } from '@/shared/theme/colors';
 
 const SET_TYPE_LABEL: Record<SetType, string> = {
   warmup: 'Warm-up',
@@ -32,7 +33,7 @@ export function RoutineDayCard({ day, isToday }: Props) {
       layout={LinearTransition.springify().damping(20)}
       className={[
         'rounded-3xl border p-4',
-        isToday ? 'border-emerald-500/30 bg-emerald-500/10' : 'border-neutral-800/70 bg-neutral-900',
+        isToday ? 'border-accent/30 bg-accent/10' : 'border-border/70 bg-surfaceRaised',
       ].join(' ')}
     >
       <Pressable
@@ -43,28 +44,28 @@ export function RoutineDayCard({ day, isToday }: Props) {
       >
         <View className="flex-1">
           <View className="flex-row items-center gap-2">
-            <Text className={isToday ? 'text-base font-semibold text-emerald-400' : 'text-base font-semibold text-white'}>
+            <Text className={isToday ? 'text-base font-semibold text-accentMuted' : 'text-base font-semibold text-textPrimary'}>
               {day.name}
             </Text>
             {isToday ? (
-              <View className="rounded-full bg-emerald-500/20 px-2 py-0.5">
-                <Text className="text-[10px] uppercase tracking-wide text-emerald-400">today</Text>
+              <View className="rounded-full bg-accent/20 px-2 py-0.5">
+                <Text className="text-[10px] uppercase tracking-wide text-accentMuted">today</Text>
               </View>
             ) : null}
           </View>
-          <Text className="mt-0.5 text-sm text-neutral-500">
+          <Text className="mt-0.5 text-sm text-textMuted">
             {day.isRestDay ? 'Rest day' : `${day.exercises.length} exercises · ${totalSets} sets`}
           </Text>
         </View>
         <MaterialCommunityIcons
           name={expanded ? 'chevron-up' : 'chevron-down'}
           size={20}
-          color="#6b6b70"
+          color={colors.textMuted}
         />
       </Pressable>
 
       {expanded && day.warmupNote ? (
-        <Animated.Text entering={FadeIn.duration(120)} className="mt-3 text-xs text-neutral-500">
+        <Animated.Text entering={FadeIn.duration(120)} className="mt-3 text-xs text-textMuted">
           {day.warmupNote}
         </Animated.Text>
       ) : null}
@@ -73,19 +74,19 @@ export function RoutineDayCard({ day, isToday }: Props) {
         <Animated.View entering={FadeIn.duration(120)} className="mt-3 gap-4">
           {day.exercises.map((ex) => (
             <View key={ex.id}>
-              <Text className="font-medium text-white">{ex.exercise.name}</Text>
-              {ex.note ? <Text className="text-xs text-neutral-500">{ex.note}</Text> : null}
+              <Text className="font-medium text-textPrimary">{ex.exercise.name}</Text>
+              {ex.note ? <Text className="text-xs text-textMuted">{ex.note}</Text> : null}
               <View className="mt-1.5 gap-1">
                 {ex.sets.map((s) => (
                   <View key={s.id} className="flex-row items-baseline justify-between">
-                    <Text className="text-sm text-neutral-400">
-                      <Text className="text-neutral-600">{SET_TYPE_LABEL[s.setType]} · </Text>
+                    <Text className="text-sm text-textDim">
+                      <Text className="text-textFaint">{SET_TYPE_LABEL[s.setType]} · </Text>
                       {s.targetWeightKg != null ? formatWeight(s.targetWeightKg) : 'bodyweight'}
                       {s.targetReps != null ? ` × ${s.targetReps}` : ''}
                       {s.targetNote ? ` — ${s.targetNote}` : ''}
                     </Text>
                     {s.restSeconds ? (
-                      <Text className="text-xs text-neutral-600">rest {s.restSeconds}s</Text>
+                      <Text className="text-xs text-textFaint">rest {s.restSeconds}s</Text>
                     ) : null}
                   </View>
                 ))}

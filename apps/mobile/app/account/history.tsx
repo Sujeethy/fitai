@@ -22,7 +22,7 @@ export default function HistoryScreen() {
 
   return (
     <Screen title="History" subtitle="Every change, and how to undo it">
-      {journal.isPending ? <Text className="text-neutral-500">Loading…</Text> : null}
+      {journal.isPending ? <Text className="text-textMuted">Loading…</Text> : null}
 
       {batches.length === 0 && !journal.isPending ? (
         <EmptyState title="Nothing logged yet" hint="Changes you make will show up here." />
@@ -33,7 +33,7 @@ export default function HistoryScreen() {
           key={b.batchId}
           entering={FadeInDown.springify().damping(18)}
           layout={LinearTransition.springify().damping(20)}
-          className="rounded-3xl border border-neutral-800/70 bg-neutral-900 p-4"
+          className="rounded-3xl border border-border/70 bg-surfaceRaised p-4"
         >
           <View className="flex-row items-start justify-between gap-3">
             <View className="mt-0.5">
@@ -44,8 +44,8 @@ export default function HistoryScreen() {
               />
             </View>
             <View className="flex-1">
-              <Text className="text-white">{describeBatch(b)}</Text>
-              <Text className="mt-0.5 text-xs text-neutral-500">
+              <Text className="text-textPrimary">{describeBatch(b)}</Text>
+              <Text className="mt-0.5 text-xs text-textMuted">
                 {b.actor === 'llm' ? `${b.provider ?? 'assistant'} · ` : ''}
                 {b.at.slice(0, 16).replace('T', ' ')}
               </Text>
@@ -61,7 +61,7 @@ export default function HistoryScreen() {
         </Animated.View>
       ))}
 
-      {undo.error ? <Text className="text-sm text-red-400">{undo.error.message}</Text> : null}
+      {undo.error ? <Text className="text-sm text-danger">{undo.error.message}</Text> : null}
     </Screen>
   );
 }

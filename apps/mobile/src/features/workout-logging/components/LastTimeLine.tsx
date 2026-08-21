@@ -8,12 +8,12 @@ import { formatKg } from '@/shared/lib/format';
  */
 export function LastTimeLine({ performance }: { performance: Performance | null }) {
   if (!performance || performance.sets.length === 0) {
-    return <Text className="text-sm text-neutral-600">First time doing this — no history yet.</Text>;
+    return <Text className="text-sm text-textFaint">First time doing this — no history yet.</Text>;
   }
 
   return (
-    <Text className="text-sm text-neutral-500">
-      Last time · <Text className="text-neutral-300">{summarise(performance)}</Text>
+    <Text className="text-sm text-textMuted">
+      Last time · <Text className="text-textSecondary">{summarise(performance)}</Text>
     </Text>
   );
 }

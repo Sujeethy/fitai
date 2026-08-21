@@ -15,25 +15,25 @@ export function WeightTrend({ entries }: { entries: readonly BodyWeight[] }) {
   const delta = previous === null ? null : recent - previous;
 
   return (
-    <View className="rounded-3xl border border-neutral-800/70 bg-neutral-900 p-4">
-      <Text className="text-xs uppercase tracking-wide text-neutral-500">7-day average</Text>
+    <View className="rounded-3xl border border-border/70 bg-surfaceRaised p-4">
+      <Text className="text-xs uppercase tracking-wide text-textMuted">7-day average</Text>
       <View className="mt-1 flex-row items-baseline gap-3">
-        <Text className="text-3xl font-bold text-white">{formatKg(recent)} kg</Text>
+        <Text className="text-3xl font-bold text-textPrimary">{formatKg(recent)} kg</Text>
         {delta !== null ? (
           <Text
             className={
               Math.abs(delta) < 0.05
-                ? 'text-sm text-neutral-500'
+                ? 'text-sm text-textMuted'
                 : delta < 0
-                  ? 'text-sm text-emerald-400'
-                  : 'text-sm text-amber-400'
+                  ? 'text-sm text-accentMuted'
+                  : 'text-sm text-warning'
             }
           >
             {delta > 0 ? '+' : '−'}
             {formatKg(Math.abs(delta))} kg vs previous week
           </Text>
         ) : (
-          <Text className="text-sm text-neutral-600">need 2 weeks for a trend</Text>
+          <Text className="text-sm text-textFaint">need 2 weeks for a trend</Text>
         )}
       </View>
     </View>

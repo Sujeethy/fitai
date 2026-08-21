@@ -89,13 +89,13 @@ export function ExerciseCard({ sessionId, item, onSwap }: Props) {
     <Animated.View
       entering={FadeInUp.springify().damping(18)}
       layout={LinearTransition.springify().damping(20)}
-      className="rounded-3xl border border-neutral-800/70 bg-neutral-900 p-4"
+      className="rounded-3xl border border-border/70 bg-surfaceRaised p-4"
     >
       <View className="flex-row items-start justify-between gap-3">
         <View className="flex-1">
-          <Text className="text-lg font-semibold text-white">{item.exercise.name}</Text>
+          <Text className="text-lg font-semibold text-textPrimary">{item.exercise.name}</Text>
           {wasSwapped ? (
-            <Text className="mt-0.5 text-xs text-amber-400">
+            <Text className="mt-0.5 text-xs text-warning">
               swapped from {item.plannedExercise?.name}
               {item.substitutionReason === 'equipment_busy' ? ' · was busy' : ''}
             </Text>
@@ -227,7 +227,7 @@ export function ExerciseCard({ sessionId, item, onSwap }: Props) {
       )}
 
       {logSet.error ? (
-        <Text className="mt-2 text-sm text-red-400">{logSet.error.message}</Text>
+        <Text className="mt-2 text-sm text-danger">{logSet.error.message}</Text>
       ) : null}
     </Animated.View>
   );

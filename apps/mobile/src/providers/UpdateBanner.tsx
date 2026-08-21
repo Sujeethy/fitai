@@ -50,13 +50,13 @@ export function UpdateBanner() {
           setReloading(true);
           await Updates.reloadAsync();
         }}
-        className="flex-row items-center justify-between rounded-2xl bg-emerald-500 px-5 py-4 active:bg-emerald-600"
+        className="flex-row items-center justify-between rounded-2xl bg-accent px-5 py-4 active:bg-accentStrong"
       >
-        <Text className="font-semibold text-neutral-950">
+        <Text className="font-semibold text-textInverse">
           {reloading ? 'Restarting…' : 'Update ready'}
         </Text>
         {!reloading ? (
-          <Text className="text-sm font-medium text-neutral-900">Tap to apply</Text>
+          <Text className="text-sm font-medium text-textInverse">Tap to apply</Text>
         ) : null}
       </Pressable>
     </View>

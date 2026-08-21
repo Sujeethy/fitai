@@ -2,6 +2,7 @@ import { Pressable, Text, View } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { Screen } from '@/shared/components/Screen';
+import { colors } from '@/shared/theme/colors';
 
 /**
  * Everything that isn't a daily-tap flow: history, backups, and (later)
@@ -49,16 +50,16 @@ function AccountRow({
       accessibilityRole="button"
       accessibilityLabel={label}
       onPress={onPress}
-      className="flex-row items-center gap-3 rounded-3xl border border-neutral-800/70 bg-neutral-900 p-4"
+      className="flex-row items-center gap-3 rounded-3xl border border-border/70 bg-surfaceRaised p-4"
     >
-      <View className="h-10 w-10 items-center justify-center rounded-full bg-neutral-800">
-        <MaterialCommunityIcons name={icon} size={20} color="#d4d4d4" />
+      <View className="h-10 w-10 items-center justify-center rounded-full bg-surfaceOverlay">
+        <MaterialCommunityIcons name={icon} size={20} color={colors.textSecondary} />
       </View>
       <View className="flex-1">
-        <Text className="text-base font-semibold text-white">{label}</Text>
-        <Text className="text-sm text-neutral-500">{hint}</Text>
+        <Text className="text-base font-semibold text-textPrimary">{label}</Text>
+        <Text className="text-sm text-textMuted">{hint}</Text>
       </View>
-      <MaterialCommunityIcons name="chevron-right" size={20} color="#6b6b70" />
+      <MaterialCommunityIcons name="chevron-right" size={20} color={colors.textMuted} />
     </Pressable>
   );
 }

@@ -14,7 +14,7 @@ export default function RoutineScreen() {
 
   return (
     <Screen title="Routine" subtitle={routine.data?.name} headerRight={<AccountButton />}>
-      {routine.isPending ? <Text className="text-neutral-500">Loading…</Text> : null}
+      {routine.isPending ? <Text className="text-textMuted">Loading…</Text> : null}
 
       {!routine.isPending && !routine.data ? (
         <EmptyState
